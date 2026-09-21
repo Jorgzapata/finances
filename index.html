@@ -216,6 +216,7 @@ form.mov textarea{resize:vertical; min-height:56px}
 .acc-caja details summary{cursor:pointer; font-size:13px; color:var(--ink-3); margin-bottom:8px}
 .acc-caja details label{margin-bottom:8px}
 .acc-error{background:color-mix(in srgb,var(--clay) 13%,transparent); color:var(--clay); padding:9px 11px; border-radius:9px; font-size:13.5px; margin:2px 0 0}
+.acc-ok{background:color-mix(in srgb,var(--green) 13%,transparent); color:var(--green); padding:9px 11px; border-radius:9px; font-size:13.5px; margin:2px 0 0}
 textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:10px}
 </style>
 </head>
@@ -224,20 +225,22 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
 
 <div id="acceso" hidden>
   <div class="acc-caja tarjeta">
-    <h2 class="serif">Finanzas personales</h2>
-    <p class="sub">Entra con tu correo y contraseña para que tus datos te sigan en el celular y en el computador.</p>
+    <h2 class="serif" id="acc-titulo">Finanzas personales</h2>
+    <p class="sub" id="acc-sub">Entra con tu correo y contraseña para que tus datos te sigan en el celular y en el computador. Cada persona tiene su propio inicio de sesión y ve solo su propia información.</p>
     <form id="form-acceso">
       <label>Correo<input type="email" id="acc-email" autocomplete="username" required></label>
-      <label>Contraseña<input type="password" id="acc-clave" autocomplete="current-password" required></label>
+      <label>Contraseña<input type="password" id="acc-clave" autocomplete="current-password" minlength="6" required></label>
       <details id="acceso-config">
         <summary>Datos de mi proyecto de Supabase</summary>
-        <label>URL del proyecto<input type="url" id="acc-url" placeholder="https://zgtvhbuwjnjadrgbtnyf.supabase.co"></label>
-        <label>Clave publishable<input type="text" id="acc-key" placeholder="sb_publishable_NzQOuPbBf0_lRCzLU5hz8A_2vYnfbMz"></label>
+        <label>URL del proyecto<input type="url" id="acc-url" placeholder="https://xxxxxxxx.supabase.co"></label>
+        <label>Clave publishable<input type="text" id="acc-key" placeholder="sb_publishable_..."></label>
         <p class="nota">Se guardan solo en este navegador. Si las pones dentro del archivo index.html no tendrás que escribirlas en cada dispositivo.</p>
       </details>
       <p class="acc-error" id="acceso-error" hidden></p>
+      <p class="acc-ok" id="acceso-ok" hidden></p>
       <button type="submit" class="btn primario" id="acc-entrar" style="width:100%; margin-top:4px">Entrar</button>
     </form>
+    <button class="btn" id="acc-alternar" style="width:100%; margin-top:8px">Soy nuevo aquí · crear mi cuenta</button>
     <button class="btn" id="acc-local" style="width:100%; margin-top:8px">Usar solo en este dispositivo</button>
   </div>
 </div>
@@ -421,8 +424,8 @@ const catsDe = tipo => estado.categorias.filter(c => c.tipo === tipo);
    │  guardará en este navegador.                                     │
    └──────────────────────────────────────────────────────────────────┘ */
 const CONFIG = {
-  SUPABASE_URL: "https://zgtvhbuwjnjadrgbtnyf.supabase.co",
-  SUPABASE_KEY: "sb_publishable_NzQOuPbBf0_lRCzLU5hz8A_2vYnfbMz"
+  SUPABASE_URL: "",   // ejemplo: https://abcdefghijklmn.supabase.co
+  SUPABASE_KEY: ""    // publishable key: sb_publishable_...
 };
 /* ──────────────────────────────────────────────────────────────────── */
 
@@ -437,8 +440,13 @@ let guardando = false, pendiente = false, temporizador = null, tocado = false;
 function setEstadoGuardado(txt){ const el = document.getElementById("estado-guardado"); if(el) el.textContent = txt; }
 function leerJson(c){ try{ const s = localStorage.getItem(c); return s ? JSON.parse(s) : null; }catch(_){ return null; } }
 function escribirJson(c, v){ try{ v == null ? localStorage.removeItem(c) : localStorage.setItem(c, JSON.stringify(v)); }catch(_){} }
-function guardarLocal(){ try{ localStorage.setItem(CLAVE_LOCAL, JSON.stringify(estado)); }catch(_){} }
-function leerLocal(){ return leerJson(CLAVE_LOCAL); }
+function claveEstado(){
+  // Con Supabase, cada persona guarda su caché bajo su propio id, para que
+  // compartir un mismo celular o computador nunca mezcle los datos de dos perfiles.
+  return (sesion && sesion.uid && confNube()) ? (CLAVE_LOCAL + ":u:" + sesion.uid) : CLAVE_LOCAL;
+}
+function guardarLocal(){ try{ localStorage.setItem(claveEstado(), JSON.stringify(estado)); }catch(_){} }
+function leerLocal(){ return leerJson(claveEstado()); }
 
 function confNube(){
   const g = leerJson(CLAVE_NUBE) || {};
@@ -483,6 +491,13 @@ function guardarSesion(r){
 async function entrar(email, clave){
   const r = await nubeFetch("/auth/v1/token?grant_type=password", {method:"POST", body: JSON.stringify({email: email, password: clave})}, false);
   return guardarSesion(r);
+}
+async function registrar(email, clave){
+  const r = await nubeFetch("/auth/v1/signup", {method:"POST", body: JSON.stringify({email: email, password: clave})}, false);
+  // Si el proyecto pide confirmar el correo, Supabase responde sin access_token
+  // y hay que avisarle a la persona que revise su bandeja antes de entrar.
+  if(r && r.access_token) return guardarSesion(r);
+  return null;
 }
 async function refrescar(){
   if(!sesion || !sesion.refresh_token) return null;
@@ -575,7 +590,6 @@ async function iniciarSync(){
     else mostrarAcceso("");
     return;
   }
-  sesion = leerJson(CLAVE_SESION);
   if(sesion && sesion.uid){
     backend = "supabase";
     setEstadoGuardado("Sincronizando…");
@@ -597,8 +611,9 @@ function mostrarAcceso(mensaje){
   const hayConf = !!confNube();
   const fijo = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_KEY);
   const g = leerJson(CLAVE_NUBE) || {};
-  document.getElementById("acceso-error").textContent = mensaje || "";
-  document.getElementById("acceso-error").hidden = !mensaje;
+  const err = document.getElementById("acceso-error"), ok = document.getElementById("acceso-ok");
+  err.textContent = mensaje || ""; err.hidden = !mensaje;
+  ok.hidden = true;
   const conf = document.getElementById("acceso-config");
   conf.hidden = fijo;
   if(!fijo){
@@ -606,15 +621,40 @@ function mostrarAcceso(mensaje){
     document.getElementById("acc-url").value = g.url || "";
     document.getElementById("acc-key").value = g.key || "";
   }
+  ponerModo(false);
   caja.hidden = false;
   setTimeout(() => { const i = document.getElementById("acc-email"); if(i) i.focus(); }, 60);
 }
 function ocultarAcceso(){ document.getElementById("acceso").hidden = true; }
+let modoRegistro = false;
+function ponerModo(registro){
+  modoRegistro = registro;
+  document.getElementById("acc-titulo").textContent = registro ? "Crea tu cuenta" : "Finanzas personales";
+  document.getElementById("acc-sub").textContent = registro
+    ? "Elige tu correo y una contraseña. Nadie más va a ver tus datos: cada cuenta tiene sus propias finanzas, separadas de las demás."
+    : "Entra con tu correo y contraseña para que tus datos te sigan en el celular y en el computador. Cada persona tiene su propio inicio de sesión y ve solo su propia información.";
+  document.getElementById("acc-entrar").textContent = registro ? "Crear cuenta" : "Entrar";
+  document.getElementById("acc-alternar").textContent = registro ? "Ya tengo cuenta · entrar" : "Soy nuevo aquí · crear mi cuenta";
+  document.getElementById("acc-clave").autocomplete = registro ? "new-password" : "current-password";
+  document.getElementById("acceso-error").hidden = true;
+  document.getElementById("acceso-ok").hidden = true;
+}
+/* Al identificar quién entra, se limpia lo que hubiera en memoria y se carga
+   solo la caché de ESE usuario (o una libreta nueva si nunca ha entrado en
+   este dispositivo). Así, si antes usó la app otra persona en el mismo
+   celular o computador, sus datos no se cruzan con los de quien entra ahora. */
+function empezarComo(nuevaSesion){
+  sesion = nuevaSesion; backend = "supabase"; tocado = false;
+  const cache = leerLocal();
+  estado = cache ? sanear(cache) : semillaEstado();
+  sincronizarControles();
+}
 function montarAcceso(){
+  document.getElementById("acc-alternar").addEventListener("click", () => ponerModo(!modoRegistro));
   document.getElementById("form-acceso").addEventListener("submit", async e => {
     e.preventDefault();
     const btn = document.getElementById("acc-entrar");
-    const err = document.getElementById("acceso-error");
+    const err = document.getElementById("acceso-error"), ok = document.getElementById("acceso-ok");
     const url = document.getElementById("acc-url"), key = document.getElementById("acc-key");
     if(url && !url.closest("details").hidden){
       if(url.value.trim() && key.value.trim()) escribirJson(CLAVE_NUBE, {url: url.value.trim().replace(/\/+$/,""), key: key.value.trim()});
@@ -622,21 +662,39 @@ function montarAcceso(){
     if(!confNube()){
       err.textContent = "Faltan la URL y la clave del proyecto."; err.hidden = false; return;
     }
-    btn.disabled = true; btn.textContent = "Entrando…"; err.hidden = true;
+    const email = document.getElementById("acc-email").value.trim();
+    const clave = document.getElementById("acc-clave").value;
+    btn.disabled = true; btn.textContent = modoRegistro ? "Creando cuenta…" : "Entrando…"; err.hidden = true; ok.hidden = true;
     try{
-      await entrar(document.getElementById("acc-email").value.trim(), document.getElementById("acc-clave").value);
+      if(modoRegistro){
+        const s = await registrar(email, clave);
+        if(!s){
+          ok.textContent = "Cuenta creada. Revisa tu correo (" + email + ") y confirma antes de entrar.";
+          ok.hidden = false; ponerModo(false);
+          document.getElementById("acc-email").value = email;
+          return;
+        }
+        empezarComo(s);
+      }else{
+        const s = await entrar(email, clave);
+        empezarComo(s);
+      }
       escribirJson(CLAVE_SOLO_LOCAL, null);
-      backend = "supabase";
       ocultarAcceso();
       setEstadoGuardado("Sincronizando…");
+      render();
       await adoptarRemoto(nubeCargar);
     }catch(ex){
       const m = String(ex && ex.message || "");
-      err.textContent = /invalid|credential|grant/i.test(m) ? "Correo o contraseña incorrectos." : m;
+      if(/user already registered|already exists/i.test(m)) err.textContent = "Ese correo ya tiene una cuenta. Usa 'Ya tengo cuenta'.";
+      else if(/invalid|credential|grant/i.test(m)) err.textContent = "Correo o contraseña incorrectos.";
+      else if(/password/i.test(m) && modoRegistro) err.textContent = "La contraseña necesita al menos 6 caracteres.";
+      else err.textContent = m;
       err.hidden = false;
       mostrarAcceso(err.textContent);
+      if(modoRegistro) ponerModo(true);
     }finally{
-      btn.disabled = false; btn.textContent = "Entrar";
+      btn.disabled = false; btn.textContent = modoRegistro ? "Crear cuenta" : "Entrar";
     }
   });
   document.getElementById("acc-local").addEventListener("click", () => {
@@ -1152,7 +1210,8 @@ function render(){
   if(!cont) return;
   cont.innerHTML = html;
   document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.vista === vista ? "true" : "false"));
-  document.getElementById("sub-marca").textContent = MESES[estado.mes-1] + " de " + estado.anio + " · " + estado.movimientos.length + " movimientos en total";
+  const quien = (backend === "supabase" && sesion && sesion.email) ? " · " + sesion.email : "";
+  document.getElementById("sub-marca").textContent = MESES[estado.mes-1] + " de " + estado.anio + " · " + estado.movimientos.length + " movimientos en total" + quien;
   window.scrollTo(0, y);
 }
 function sincronizarControles(){
@@ -1370,8 +1429,9 @@ function montarMenu(){
     if(acc === "importar") mostrarTexto("Importar copia de seguridad", "Pega aquí el contenido de un archivo JSON exportado antes. Reemplaza todos los datos actuales.", "", true);
     if(acc === "entrar"){ escribirJson(CLAVE_SOLO_LOCAL, null); mostrarAcceso(""); }
     if(acc === "salir"){
-      salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null);
-      setEstadoGuardado("Guardado en este navegador");
+      salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); tocado = false;
+      estado = semillaEstado(); sincronizarControles(); render();
+      setEstadoGuardado("");
       mostrarAcceso("");
     }
     if(acc === "tema"){
@@ -1408,6 +1468,7 @@ function montarMenu(){
 /* ============ arranque ============ */
 function arrancar(){
   try{ const tema = localStorage.getItem(CLAVE_LOCAL + ":tema"); if(tema) document.documentElement.setAttribute("data-theme", tema); }catch(_){}
+  sesion = leerJson(CLAVE_SESION); // se lee antes de la caché para que claveEstado() ya sepa de quién es
   const local = leerLocal();
   estado = local ? sanear(local) : semillaEstado();
   montarTabs(); montarPeriodo(); montarDialogo(); montarVistaEventos(); montarMenu(); montarAcceso();
