@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Candado del navegador: aunque algún dato mostrado tuviera contenido
+     inesperado, esto impide que la página cargue scripts ajenos o envíe
+     información a cualquier sitio que no sea el propio proyecto de Supabase. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'none'; form-action 'none';">
 <title>Finanzas personales 2026</title>
 <meta name="theme-color" content="#17231E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -516,7 +520,18 @@ async function tokenValido(){
   if(Date.now() > sesion.expira - 60000) return await refrescar();
   return sesion.access_token;
 }
-function salirSesion(){ sesion = null; escribirJson(CLAVE_SESION, null); }
+async function salirSesion(){
+  // Sin esto, cerrar sesión solo borraba el token del navegador: el token
+  // seguía siendo válido en el servidor si alguien lo hubiera copiado antes
+  // (por ejemplo, de una copia de seguridad del dispositivo). Avisamos a
+  // Supabase que lo invalide. Es "mejor esfuerzo": si no hay red, igual se
+  // limpia localmente y la sesión deja de servir en este navegador.
+  const t = sesion && sesion.access_token;
+  sesion = null; escribirJson(CLAVE_SESION, null);
+  if(t){
+    try{ await nubeFetch("/auth/v1/logout?scope=local", {method:"POST", headers:{Authorization:"Bearer "+t}}, false); }catch(_){}
+  }
+}
 
 async function nubeCargar(){
   const filas = await nubeFetch("/rest/v1/finanzas?select=estado&user_id=eq." + encodeURIComponent(sesion.uid), {method:"GET"}, true);
@@ -1359,7 +1374,17 @@ function montarVistaEventos(){
 /* ============ menú de datos ============ */
 function csvMovimientos(){
   const cab = ["Fecha","Tipo","Categoría","Descripción","Monto","Método de pago","Notas"];
-  const q = v => '"' + String(v == null ? "" : v).replace(/"/g,'""') + '"';
+  // Si una descripción, nota o nombre de categoría empezara con = + - @ (o un
+  // tabulador), Excel o Google Sheets podrían interpretarla como una fórmula
+  // al abrir el archivo, no como texto. Se antepone un apóstrofo para que
+  // siempre se lea como texto literal (la recomendación estándar contra la
+  // "inyección de fórmulas" en archivos CSV).
+  const csvSeguro = v => {
+    let s = String(v == null ? "" : v);
+    if(/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+    return s;
+  };
+  const q = v => '"' + csvSeguro(v).replace(/"/g,'""') + '"';
   const filas = estado.movimientos.slice().sort((a,b) => a.fecha < b.fecha ? -1 : 1)
     .map(m => [m.fecha, m.tipo, nombreCat(m.categoriaId), m.descripcion, m.monto, m.metodo, m.notas].map(q).join(";"));
   return "\uFEFF" + cab.map(q).join(";") + "\n" + filas.join("\n");
