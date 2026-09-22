@@ -64,7 +64,7 @@ button,input,select,textarea{font:inherit; color:inherit}
 
 /* ---------- cabecera ---------- */
 header.top{border-bottom:1px solid var(--line); background:var(--surface)}
-.top-in{max-width:1120px; margin:0 auto; padding:14px 16px 0; display:flex; flex-wrap:wrap; gap:14px 20px; align-items:flex-end}
+.top-in{max-width:1120px; margin:0 auto; padding:14px 16px 10px; display:flex; flex-wrap:wrap; gap:14px 20px; align-items:flex-end}
 .marca{flex:1 1 220px; min-width:0}
 .marca h1{font-size:25px; line-height:1.1}
 .marca p{margin:2px 0 0; color:var(--ink-3); font-size:13px}
@@ -79,6 +79,7 @@ header.top{border-bottom:1px solid var(--line); background:var(--surface)}
 .btn{
   background:var(--surface-2); border:1px solid var(--line); border-radius:9px;
   padding:8px 13px; cursor:pointer; font-size:14px; font-weight:450;
+  display:inline-flex; align-items:center; justify-content:center; gap:6px;
 }
 .btn:hover{background:var(--line-soft)}
 .btn.primario{background:var(--green); border-color:var(--green); color:#FBFDF9; font-weight:500}
@@ -89,7 +90,10 @@ header.top{border-bottom:1px solid var(--line); background:var(--surface)}
 .btn.icono{padding:5px 8px; line-height:1}
 .btn.peligro{color:var(--clay)}
 
-nav.tabs{display:flex; gap:2px; overflow-x:auto; max-width:1120px; margin:10px auto 0; padding:0 16px; scrollbar-width:none}
+nav.tabs{
+  display:flex; gap:2px; overflow-x:auto; max-width:1120px; margin:0 auto; padding:0 16px; scrollbar-width:none;
+  position:sticky; top:env(safe-area-inset-top,0px); z-index:20; background:var(--surface); border-bottom:1px solid var(--line);
+}
 nav.tabs::-webkit-scrollbar{display:none}
 nav.tabs button{
   background:none; border:0; border-bottom:2px solid transparent; padding:10px 12px;
@@ -140,6 +144,24 @@ tbody tr:hover td.fija{background:var(--surface-2)}
 tr.grupo td.fija{background:var(--surface-2)}
 thead th.fija{z-index:3}
 @media (min-width:860px){.fab{display:none}}
+@media (max-width:640px){
+  /* iOS hace zoom automático al enfocar un campo si su letra es menor a
+     16px. Solo se sube el tamaño de los campos de formulario en pantallas
+     de celular; el resto de la app sigue con su tamaño normal. */
+  input, select, textarea{ font-size:16px; }
+  .num-in.corto{ font-size:15px; }
+  /* Botones más fáciles de tocar con el dedo, sin agrandarlos en escritorio. */
+  .btn{ min-height:38px; }
+  .btn.chico{ min-height:32px; padding:6px 11px; }
+  nav.tabs button{ min-height:40px; }
+}
+@media (max-width:420px){
+  /* En los celulares más angostos, un solo campo por fila en el formulario
+     de movimiento es más cómodo de leer y de tocar que dos apretados. */
+  form.mov{ grid-template-columns:1fr; }
+  .kpi .num{ font-size:19px; }
+  .hero{ padding:18px 16px 16px; }
+}
 @media (max-width:859px){#btn-nuevo{display:none} .estado{display:none}}
 .num-in,.txt-in{
   background:transparent; border:1px solid transparent; border-radius:6px; padding:4px 6px;
@@ -433,9 +455,15 @@ const CONFIG = {
 };
 /* ──────────────────────────────────────────────────────────────────── */
 
+/* Minutos sin tocar la app antes de cerrar la sesión sola.
+   Solo aplica cuando se entra con correo y contraseña (no en el modo
+   "usar solo en este dispositivo" ni dentro de Claude). */
+const MINUTOS_INACTIVIDAD = 20;
+
 const CLAVE_NUBE = CLAVE_LOCAL + ":nube";
 const CLAVE_SESION = CLAVE_LOCAL + ":sesion";
 const CLAVE_SOLO_LOCAL = CLAVE_LOCAL + ":solo-local";
+const CLAVE_ACTIVIDAD = CLAVE_LOCAL + ":actividad";
 
 let backend = "local";           // "claude" | "supabase" | "local"
 let db = null, dbDoc = null, sesion = null;
@@ -533,6 +561,34 @@ async function salirSesion(){
   }
 }
 
+/* ---- cerrar sesión sola tras un rato sin actividad ---- */
+let ultimoMarcado = 0;
+function marcarActividad(){
+  if(backend !== "supabase" || !sesion) return;
+  const ahora = Date.now();
+  if(ahora - ultimoMarcado < 15000) return; // evita escribir en cada pixel de mousemove
+  ultimoMarcado = ahora;
+  escribirJson(CLAVE_ACTIVIDAD, ahora);
+}
+function inactivoDemasiado(){
+  const ultima = leerJson(CLAVE_ACTIVIDAD);
+  return !!ultima && (Date.now() - ultima > MINUTOS_INACTIVIDAD * 60000);
+}
+async function cerrarPorInactividad(){
+  await salirSesion();
+  backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); escribirJson(CLAVE_ACTIVIDAD, null); tocado = false;
+  estado = semillaEstado(); sincronizarControles(); render();
+  setEstadoGuardado("");
+  mostrarAcceso("Tu sesión se cerró por " + MINUTOS_INACTIVIDAD + " minutos sin actividad. Vuelve a entrar.");
+}
+function montarInactividad(){
+  ["click","keydown","touchstart","scroll","mousemove"].forEach(ev => document.addEventListener(ev, marcarActividad, {passive:true}));
+  document.addEventListener("visibilitychange", () => {
+    if(document.visibilityState === "visible" && backend === "supabase" && sesion && inactivoDemasiado()) cerrarPorInactividad();
+  });
+  setInterval(() => { if(backend === "supabase" && sesion && inactivoDemasiado()) cerrarPorInactividad(); }, 60000);
+}
+
 async function nubeCargar(){
   const filas = await nubeFetch("/rest/v1/finanzas?select=estado&user_id=eq." + encodeURIComponent(sesion.uid), {method:"GET"}, true);
   return (filas && filas[0] && filas[0].estado) || null;
@@ -606,7 +662,9 @@ async function iniciarSync(){
     return;
   }
   if(sesion && sesion.uid){
+    if(inactivoDemasiado()){ await cerrarPorInactividad(); return; }
     backend = "supabase";
+    marcarActividad();
     setEstadoGuardado("Sincronizando…");
     try{ await adoptarRemoto(nubeCargar); }
     catch(e){
@@ -660,6 +718,7 @@ function ponerModo(registro){
    celular o computador, sus datos no se cruzan con los de quien entra ahora. */
 function empezarComo(nuevaSesion){
   sesion = nuevaSesion; backend = "supabase"; tocado = false;
+  escribirJson(CLAVE_ACTIVIDAD, Date.now());
   const cache = leerLocal();
   estado = cache ? sanear(cache) : semillaEstado();
   sincronizarControles();
@@ -929,6 +988,13 @@ function vistaMovimientos(){
   lista.sort((x,y) => x.fecha < y.fecha ? 1 : x.fecha > y.fecha ? -1 : 0);
   const total = lista.reduce((s,m) => s + (m.tipo === "Ingresos" ? m.monto : -m.monto), 0);
   const hayEjemplos = estado.movimientos.some(m => m.ejemplo);
+  // Con años de historial, dibujar miles de filas a la vez puede sentirse
+  // lento en un celular. No se borra nada: solo se muestran primero los más
+  // recientes y se avisa que hay más, para acotar con el buscador o el mes.
+  const LIMITE_FILAS = 250;
+  const totalEncontrados = lista.length;
+  const truncado = totalEncontrados > LIMITE_FILAS;
+  if(truncado) lista = lista.slice(0, LIMITE_FILAS);
 
   return `
   <div class="seccion">
@@ -941,8 +1007,9 @@ function vistaMovimientos(){
         ${TIPOS.map(t => `<option value="${esc(t)}" ${filtros.tipo === t ? "selected" : ""}>${esc(t)}</option>`).join("")}
       </select>
       <label class="check"><input type="checkbox" id="f-solo-mes" ${filtros.soloMes ? "checked" : ""}> Solo ${esc(MESES[estado.mes-1])} ${estado.anio}</label>
-      <span class="tenue" style="margin-left:auto">${lista.length} movimiento${lista.length === 1 ? "" : "s"} · neto ${money(total)}</span>
+      <span class="tenue" style="margin-left:auto">${totalEncontrados} movimiento${totalEncontrados === 1 ? "" : "s"} · neto ${money(total)}</span>
     </div>
+    ${truncado ? `<p class="nota">Mostrando los ${LIMITE_FILAS} más recientes de ${totalEncontrados}. Usa el buscador o el filtro por mes para acotar la lista.</p>` : ""}
     ${hayEjemplos ? `<div class="cinta"><span>Hay 5 movimientos de ejemplo cargados para que veas cómo funciona.</span><button class="btn chico" id="btn-quitar-ejemplos">Borrar los ejemplos</button></div>` : ""}
     <div class="tarjeta" style="margin-top:12px; overflow:hidden">
       ${lista.length ? `<div class="scroll-x"><table>
@@ -1454,7 +1521,7 @@ function montarMenu(){
     if(acc === "importar") mostrarTexto("Importar copia de seguridad", "Pega aquí el contenido de un archivo JSON exportado antes. Reemplaza todos los datos actuales.", "", true);
     if(acc === "entrar"){ escribirJson(CLAVE_SOLO_LOCAL, null); mostrarAcceso(""); }
     if(acc === "salir"){
-      salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); tocado = false;
+      salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); escribirJson(CLAVE_ACTIVIDAD, null); tocado = false;
       estado = semillaEstado(); sincronizarControles(); render();
       setEstadoGuardado("");
       mostrarAcceso("");
@@ -1496,7 +1563,7 @@ function arrancar(){
   sesion = leerJson(CLAVE_SESION); // se lee antes de la caché para que claveEstado() ya sepa de quién es
   const local = leerLocal();
   estado = local ? sanear(local) : semillaEstado();
-  montarTabs(); montarPeriodo(); montarDialogo(); montarVistaEventos(); montarMenu(); montarAcceso();
+  montarTabs(); montarPeriodo(); montarDialogo(); montarVistaEventos(); montarMenu(); montarAcceso(); montarInactividad();
   sincronizarControles();
   setEstadoGuardado("");
   render();
