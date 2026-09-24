@@ -114,3 +114,70 @@ revoke execute on function public.hook_aprobar_registro(jsonb) from authenticate
 -- panel (no por SQL): activar el gancho. Ver el README para el detalle.
 -- ============================================================
 
+
+-- ============================================================
+-- PARTE 3 · Copias de seguridad automáticas
+-- La app guarda sola una versión de tus datos, como mucho una vez al
+-- día, en una tabla aparte. Si algo llegara a sobrescribir o borrar
+-- lo que tienes ahora (un error, una torpeza, un "empezar de cero"
+-- sin querer), siempre queda un punto al que volver.
+-- ============================================================
+
+-- 1. La tabla del historial: muchas filas por usuario, una por cada
+--    copia automática, ordenadas por fecha.
+create table if not exists public.finanzas_historial (
+  id         bigserial primary key,
+  user_id    uuid not null references auth.users(id) on delete cascade,
+  estado     jsonb not null check (pg_column_size(estado) < 5 * 1024 * 1024),
+  creado_en  timestamptz not null default now()
+);
+create index if not exists finanzas_historial_por_usuario
+  on public.finanzas_historial(user_id, creado_en desc);
+
+-- 2. Seguridad: cada quien ve y crea solo su propio historial. Nadie
+--    puede modificar ni borrar copias ya guardadas desde la API — de
+--    eso se encarga automáticamente el punto 3, no la propia persona.
+alter table public.finanzas_historial enable row level security;
+
+drop policy if exists "cada usuario ve su propio historial" on public.finanzas_historial;
+create policy "cada usuario ve su propio historial"
+  on public.finanzas_historial for select to authenticated
+  using (auth.uid() = user_id);
+
+drop policy if exists "cada usuario crea su propio historial" on public.finanzas_historial;
+create policy "cada usuario crea su propio historial"
+  on public.finanzas_historial for insert to authenticated
+  with check (auth.uid() = user_id);
+
+grant select, insert on public.finanzas_historial to authenticated;
+
+-- 3. Auto-poda: cada vez que se guarda una copia nueva, se conservan
+--    solo las 20 más recientes de esa persona y se borran las demás.
+--    Así la tabla nunca crece sin límite y no hace falta que nadie la
+--    limpie a mano. Corre con permisos de administrador (no de la
+--    persona que escribe), así que no hace falta darle permiso de
+--    borrar a nadie más.
+create or replace function public.podar_historial_finanzas()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  delete from public.finanzas_historial
+  where user_id = new.user_id
+    and id not in (
+      select id from public.finanzas_historial
+      where user_id = new.user_id
+      order by creado_en desc
+      limit 20
+    );
+  return new;
+end;
+$$;
+
+drop trigger if exists recortar_historial_finanzas on public.finanzas_historial;
+create trigger recortar_historial_finanzas
+  after insert on public.finanzas_historial
+  for each row execute function public.podar_historial_finanzas();
+

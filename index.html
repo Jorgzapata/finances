@@ -244,6 +244,7 @@ form.mov textarea{resize:vertical; min-height:56px}
 .acc-error{background:color-mix(in srgb,var(--clay) 13%,transparent); color:var(--clay); padding:9px 11px; border-radius:9px; font-size:13.5px; margin:2px 0 0}
 .acc-ok{background:color-mix(in srgb,var(--green) 13%,transparent); color:var(--green); padding:9px 11px; border-radius:9px; font-size:13.5px; margin:2px 0 0}
 textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:10px}
+.hist-fila{display:flex; justify-content:space-between; align-items:center; gap:12px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; background:var(--surface-2)}
 </style>
 </head>
 <body>
@@ -339,6 +340,12 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
   </div>
 </dialog>
 
+<dialog id="dlg-historial">
+  <div class="dlg-cab"><h3 class="serif">Copias automáticas</h3><p class="sub">Se guarda sola, como mucho una vez al día, para poder volver atrás si algo sale mal. Restaurar reemplaza lo que tienes ahora.</p></div>
+  <div id="historial-lista" style="padding:0 18px 18px; max-height:360px; overflow-y:auto; display:flex; flex-direction:column; gap:8px"></div>
+  <div class="dlg-pie" style="padding:0 18px 18px"><button class="btn" id="historial-cerrar">Cerrar</button></div>
+</dialog>
+
 <script>
 "use strict";
 
@@ -385,6 +392,37 @@ function partesFecha(iso){ const p = String(iso||"").split("-"); return {a:+p[0]
 function isoHoy(){ return new Date(hoy.getTime()-hoy.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 function fechaLarga(iso){ const p = partesFecha(iso); return p.d + " " + (MES_CORTO[p.m-1]||"") + " " + p.a; }
 
+/* ============ copia de seguridad cifrada (Web Crypto, sin depender de nada externo) ============ */
+function bytesABase64(bytes){
+  // Evita el error "Maximum call stack size" que da spread(...) con arreglos
+  // grandes: se arma el string en trozos en vez de todo de una vez.
+  let binario = "", trozo = 0x8000;
+  for(let i=0;i<bytes.length;i+=trozo) binario += String.fromCharCode.apply(null, bytes.subarray(i, i+trozo));
+  return btoa(binario);
+}
+function base64ABytes(b64){
+  const binario = atob(b64), bytes = new Uint8Array(binario.length);
+  for(let i=0;i<binario.length;i++) bytes[i] = binario.charCodeAt(i);
+  return bytes;
+}
+async function derivarClave(frase, sal){
+  const material = await crypto.subtle.importKey("raw", new TextEncoder().encode(frase), {name:"PBKDF2"}, false, ["deriveKey"]);
+  return crypto.subtle.deriveKey({name:"PBKDF2", salt:sal, iterations:210000, hash:"SHA-256"}, material, {name:"AES-GCM", length:256}, false, ["encrypt","decrypt"]);
+}
+async function cifrarBackup(frase){
+  const sal = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const clave = await derivarClave(frase, sal);
+  const cifrado = await crypto.subtle.encrypt({name:"AES-GCM", iv}, clave, new TextEncoder().encode(JSON.stringify(estado)));
+  return JSON.stringify({v:1, app:"finanzas-personales", sal:bytesABase64(sal), iv:bytesABase64(iv), datos:bytesABase64(new Uint8Array(cifrado))}, null, 2);
+}
+async function descifrarBackup(texto, frase){
+  const obj = JSON.parse(texto);
+  const clave = await derivarClave(frase, base64ABytes(obj.sal));
+  const buf = await crypto.subtle.decrypt({name:"AES-GCM", iv:base64ABytes(obj.iv)}, clave, base64ABytes(obj.datos));
+  return JSON.parse(new TextDecoder().decode(buf));
+}
+
 /* ============ estado ============ */
 let estado = null;
 let vista = "panel";
@@ -408,7 +446,13 @@ function semillaEstado(){
     {id:uid(), fecha:diaIso(10), tipo:"Ahorro", categoriaId:buscar("Fondo de emergencia"), descripcion:"Aporte mensual", monto:300000, metodo:"Transferencia", notas:"Ejemplo", ejemplo:true},
     {id:uid(), fecha:diaIso(15), tipo:"Deuda", categoriaId:buscar("Tarjeta de crédito"), descripcion:"Pago mínimo tarjeta", monto:250000, metodo:"Transferencia", notas:"Ejemplo", ejemplo:true}
   ];
-  return { version:1, anio:anioIni, mes:mesIni, categorias, movimientos, actualizado:Date.now() };
+  // actualizado:0 (no Date.now()) a propósito: esto es solo la libreta de
+  // ejemplo de un dispositivo que todavía no ha traído nada de la nube. Si
+  // aquí se pusiera la hora actual, "ahora mismo" iba a parecer más reciente
+  // que datos reales guardados hace rato, y la app terminaría subiendo esta
+  // libreta vacía por encima de ellos. Con 0, cualquier dato real (con una
+  // fecha de verdad) siempre gana la comparación.
+  return { version:1, anio:anioIni, mes:mesIni, categorias, movimientos, actualizado:0 };
 }
 function sanear(e){
   if(!e || typeof e !== "object") return semillaEstado();
@@ -432,7 +476,10 @@ function sanear(e){
       monto: Math.abs(Number(m.monto) || 0), metodo: String(m.metodo || ""),
       notas: String(m.notas || ""), ejemplo: !!m.ejemplo
     })) : [],
-    actualizado: Number(e.actualizado) || Date.now()
+    // Number(e.actualizado) || Date.now() convertía un 0 legítimo de vuelta
+    // en "ahora mismo" (0 se evalúa como falso en JS), reabriendo la misma
+    // puerta que el arreglo de arriba. Number.isFinite lo evita.
+    actualizado: Number.isFinite(Number(e.actualizado)) ? Number(e.actualizado) : Date.now()
   };
   const ids = new Set(out.categorias.map(c => c.id));
   out.movimientos = out.movimientos.filter(m => ids.has(m.categoriaId));
@@ -616,7 +663,7 @@ async function sincronizarSalida(){
   guardando = true;
   try{
     if(backend === "claude"){ if(dbDoc) await dbDoc.set({estado: estado, actualizado: estado.actualizado}); }
-    else await nubeGuardar();
+    else { await respaldarHistorialSiToca(); await nubeGuardar(); }
     setEstadoGuardado("Sincronizado");
   }catch(e){
     if(e && e.sinSesion){
@@ -630,6 +677,38 @@ async function sincronizarSalida(){
     guardando = false;
     if(pendiente){ pendiente = false; sincronizarSalida(); }
   }
+}
+
+/* ---- copia automática en la nube, como mucho una vez al día ---- */
+const HORAS_ENTRE_RESPALDOS = 24;
+let proximoChequeoRespaldo = 0; // evita preguntarle al servidor en cada guardado si ya toca
+async function respaldarHistorialSiToca(){
+  if(backend !== "supabase" || !sesion) return;
+  if(Date.now() < proximoChequeoRespaldo) return; // ya se confirmó hace poco que no tocaba
+  try{
+    const ultimos = await nubeFetch("/rest/v1/finanzas_historial?select=creado_en&user_id=eq." + encodeURIComponent(sesion.uid) + "&order=creado_en.desc&limit=1", {method:"GET"}, true);
+    const ultimaFecha = (ultimos && ultimos[0]) ? new Date(ultimos[0].creado_en).getTime() : 0;
+    if(ultimaFecha && Date.now() - ultimaFecha < HORAS_ENTRE_RESPALDOS * 3600000){
+      proximoChequeoRespaldo = Date.now() + 3600000; // ya hay uno reciente: no insistir por un rato
+      return;
+    }
+    // Importante: se respalda lo que HAY GUARDADO AHORA MISMO en la nube,
+    // antes de reemplazarlo — no lo que se está a punto de escribir. Así,
+    // si lo nuevo resultara estar mal (un dispositivo vacío, un error),
+    // queda un punto de vuelta justo antes de que pasara, no después.
+    const filas = await nubeFetch("/rest/v1/finanzas?select=estado&user_id=eq." + encodeURIComponent(sesion.uid), {method:"GET"}, true);
+    const actual = filas && filas[0] && filas[0].estado;
+    if(actual){
+      await nubeFetch("/rest/v1/finanzas_historial", {method:"POST", headers:{Prefer:"return=minimal"}, body: JSON.stringify({user_id: sesion.uid, estado: actual})}, true);
+      proximoChequeoRespaldo = Date.now() + 3600000; // se acaba de crear uno: no insistir por un rato
+    }
+    // Si "actual" no existía (cuenta recién creada, nada que respaldar
+    // todavía), NO se fija espera larga: se reintenta en el próximo
+    // guardado, porque para entonces ya puede haber algo real que guardar.
+  }catch(_){ /* mejor esfuerzo: si falla, se reintenta en el siguiente guardado */ }
+}
+async function cargarHistorial(){
+  return await nubeFetch("/rest/v1/finanzas_historial?select=id,creado_en,estado&user_id=eq." + encodeURIComponent(sesion.uid) + "&order=creado_en.desc&limit=20", {method:"GET"}, true);
 }
 async function adoptarRemoto(traer){
   const bruto = await traer();
@@ -1474,12 +1553,14 @@ async function descargar(nombre, contenido, titulo, sub){
   }
   mostrarTexto(titulo, sub, contenido, false);
 }
-function mostrarTexto(titulo, sub, contenido, importar){
+let modoTextoImportar = "plano";
+function mostrarTexto(titulo, sub, contenido, importar, modo){
   const d = document.getElementById("dlg-texto");
   document.getElementById("texto-titulo").textContent = titulo;
   document.getElementById("texto-sub").textContent = sub;
   const area = document.getElementById("texto-area");
   area.value = contenido;
+  modoTextoImportar = modo || "plano";
   document.getElementById("texto-aplicar").hidden = !importar;
   d.showModal();
 }
@@ -1497,6 +1578,9 @@ function montarMenu(){
       <button data-acc="csv">Exportar movimientos (CSV)</button>
       <button data-acc="json">Exportar copia de seguridad (JSON)</button>
       <button data-acc="importar">Importar copia de seguridad</button>
+      <button data-acc="cifrado-exportar">Descargar copia cifrada</button>
+      <button data-acc="cifrado-importar">Restaurar copia cifrada</button>
+      ${backend === "supabase" ? `<button data-acc="historial">Ver copias automáticas</button>` : ""}
       ${cuenta}
       <hr>
       <button data-acc="tema">Cambiar a tema oscuro/claro</button>
@@ -1518,7 +1602,17 @@ function montarMenu(){
     const acc = b.dataset.acc;
     if(acc === "csv") await descargar("movimientos-" + estado.anio + ".csv", csvMovimientos(), "Movimientos en CSV", "Copia el texto y pégalo en un archivo .csv o en tu hoja de cálculo.");
     if(acc === "json") await descargar("finanzas-" + estado.anio + ".json", JSON.stringify(estado, null, 2), "Copia de seguridad", "Guarda este texto en un archivo .json para restaurarlo más adelante.");
-    if(acc === "importar") mostrarTexto("Importar copia de seguridad", "Pega aquí el contenido de un archivo JSON exportado antes. Reemplaza todos los datos actuales.", "", true);
+    if(acc === "importar") mostrarTexto("Importar copia de seguridad", "Pega aquí el contenido de un archivo JSON exportado antes. Reemplaza todos los datos actuales.", "", true, "plano");
+    if(acc === "cifrado-exportar"){
+      const frase = prompt("Elige una frase de acceso para cifrar esta copia.\n\nSin ella, el archivo no se puede abrir después — ni siquiera tú podrás hacerlo. Anótala en un lugar seguro.");
+      if(!frase) return;
+      try{
+        const contenido = await cifrarBackup(frase);
+        await descargar("finanzas-cifrado-" + estado.anio + ".json", contenido, "Copia de seguridad cifrada", "Guarda este archivo donde quieras (correo, nube, USB). Sin la frase de acceso que elegiste, nadie puede abrirlo.");
+      }catch(_){ alert("No se pudo cifrar la copia. Intenta de nuevo."); }
+    }
+    if(acc === "cifrado-importar") mostrarTexto("Restaurar copia cifrada", "Pega aquí el contenido del archivo cifrado. Enseguida se te pedirá la frase de acceso. Esto reemplaza todos los datos actuales.", "", true, "cifrado");
+    if(acc === "historial") await mostrarHistorial();
     if(acc === "entrar"){ escribirJson(CLAVE_SOLO_LOCAL, null); mostrarAcceso(""); }
     if(acc === "salir"){
       salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); escribirJson(CLAVE_ACTIVIDAD, null); tocado = false;
@@ -1545,15 +1639,62 @@ function montarMenu(){
     area.select();
     try{ await navigator.clipboard.writeText(area.value); document.getElementById("texto-copiar").textContent = "Copiado"; setTimeout(() => document.getElementById("texto-copiar").textContent = "Copiar", 1600); }catch(_){}
   });
-  document.getElementById("texto-aplicar").addEventListener("click", () => {
+  document.getElementById("texto-aplicar").addEventListener("click", async () => {
+    const texto = document.getElementById("texto-area").value;
     try{
-      const nuevo = sanear(JSON.parse(document.getElementById("texto-area").value));
+      let nuevo;
+      if(modoTextoImportar === "cifrado"){
+        const frase = prompt("Escribe la frase de acceso con la que se cifró esta copia:");
+        if(frase == null) return;
+        nuevo = sanear(await descifrarBackup(texto, frase));
+      }else{
+        nuevo = sanear(JSON.parse(texto));
+      }
       estado = nuevo;
       marcar(); sincronizarControles(); render();
       document.getElementById("dlg-texto").close();
     }catch(_){
-      alert("Ese texto no es un JSON válido. Revisa que lo hayas copiado completo.");
+      alert(modoTextoImportar === "cifrado"
+        ? "No se pudo descifrar. Revisa que la frase de acceso sea exactamente la misma y que hayas pegado todo el texto."
+        : "Ese texto no es un JSON válido. Revisa que lo hayas copiado completo.");
     }
+  });
+}
+
+async function mostrarHistorial(){
+  const cont = document.getElementById("historial-lista");
+  cont.innerHTML = '<p class="vacio">Cargando…</p>';
+  document.getElementById("dlg-historial").showModal();
+  try{
+    const filas = await cargarHistorial();
+    if(!filas || !filas.length){
+      cont.innerHTML = '<p class="vacio">Todavía no hay copias automáticas. Se van creando solas, como mucho una por día, a medida que uses la app.</p>';
+      return;
+    }
+    ultimoHistorialCargado = filas;
+    cont.innerHTML = filas.map(f => {
+      const n = (f.estado && f.estado.movimientos && f.estado.movimientos.length) || 0;
+      const fecha = new Date(f.creado_en);
+      const texto = isNaN(fecha) ? f.creado_en : fecha.toLocaleString("es-CO", {dateStyle:"long", timeStyle:"short"});
+      return `<div class="hist-fila"><div><strong>${esc(texto)}</strong><div class="tenue" style="font-size:12.5px">${n} movimiento${n===1?"":"s"} guardados en ese momento</div></div><button class="btn chico" data-restaurar-hist="${esc(f.id)}">Restaurar</button></div>`;
+    }).join("");
+  }catch(_){
+    cont.innerHTML = '<p class="vacio">No se pudo cargar el historial. Revisa tu conexión e intenta de nuevo.</p>';
+  }
+}
+let ultimoHistorialCargado = [];
+function montarHistorial(){
+  document.getElementById("historial-cerrar").addEventListener("click", () => document.getElementById("dlg-historial").close());
+  document.getElementById("historial-lista").addEventListener("click", e => {
+    const b = e.target.closest("[data-restaurar-hist]");
+    if(!b) return;
+    const fila = ultimoHistorialCargado.find(f => String(f.id) === b.dataset.restaurarHist);
+    if(!fila) return;
+    const cuando = new Date(fila.creado_en).toLocaleString("es-CO", {dateStyle:"long", timeStyle:"short"});
+    if(!confirm("Esto reemplaza lo que tienes ahora mismo por la copia de " + cuando + ". ¿Continuar?")) return;
+    estado = sanear(fila.estado);
+    marcar(); sincronizarControles(); render();
+    document.getElementById("dlg-historial").close();
   });
 }
 
@@ -1563,7 +1704,7 @@ function arrancar(){
   sesion = leerJson(CLAVE_SESION); // se lee antes de la caché para que claveEstado() ya sepa de quién es
   const local = leerLocal();
   estado = local ? sanear(local) : semillaEstado();
-  montarTabs(); montarPeriodo(); montarDialogo(); montarVistaEventos(); montarMenu(); montarAcceso(); montarInactividad();
+  montarTabs(); montarPeriodo(); montarDialogo(); montarVistaEventos(); montarMenu(); montarAcceso(); montarInactividad(); montarHistorial();
   sincronizarControles();
   setEstadoGuardado("");
   render();

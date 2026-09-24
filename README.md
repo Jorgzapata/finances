@@ -110,6 +110,76 @@ Queda con ícono propio y se abre a pantalla completa, como una aplicación.
 
 ---
 
+## Parte 3 · Aprobar quién puede crear una cuenta (opcional)
+
+Por defecto, cualquiera con el enlace de tu sitio puede darle a "crear mi cuenta". Esto agrega
+un candado real: solo se crea la cuenta si el correo está en una lista que tú controlas. No es
+un filtro que viva en la página (eso se podría saltar); Supabase lo revisa en su propio servidor
+antes de que la cuenta llegue a existir.
+
+### 3.1 Correr el script
+
+1. Abre de nuevo el **SQL Editor** de tu proyecto → **New query**.
+2. Pega la sección **"PARTE 2"** del `supabase.sql` actualizado (o el archivo completo, es seguro
+   volver a correrlo) y presiona **Run**.
+3. Edita la lista de correos autorizados directamente en ese mismo script antes de correrlo,
+   o dile a Claude que lo haga por ti.
+
+### 3.2 Activar el candado
+
+Esto sí es un paso aparte, que no se hace por SQL:
+
+1. Menú izquierdo → **Authentication** → pestaña **Hooks**.
+2. Busca **Before User Created** → actívalo.
+3. Elige **Postgres Function** como tipo, y selecciona `hook_aprobar_registro`.
+4. **Save**.
+
+Desde ese momento, cualquiera que intente crear una cuenta con un correo que no esté en la lista
+verá el mensaje "Este correo todavía no está autorizado...". Los correos que sí agregaste pueden
+registrarse con total normalidad.
+
+### 3.3 Aprobar a alguien más adelante
+
+No hace falta repetir el script completo. Dos formas, la que te resulte más cómoda:
+
+- **Table Editor** (sin escribir SQL): menú izquierdo → **Table Editor** → tabla `invitados` →
+  botón **Insert** → **Insert row** → pega el correo → **Save**.
+- **SQL Editor**: `insert into public.invitados (email) values ('nuevo-correo@ejemplo.com');`
+
+### Qué sí y qué no cubre esto
+
+- Solo afecta a cuentas **nuevas**. Las que ya se crearon antes de activar el candado siguen
+  existiendo tal cual.
+- Es un filtro de invitación: tú decides quién puede entrar *antes* de que lo intente, escribiendo
+  su correo en la lista. Si prefieres que cualquiera pueda pedir acceso y tú lo apruebes
+  *después* de ver la solicitud, es una variante distinta y bastante más elaborada de construir;
+  para dos o tres personas de confianza, la lista de invitados cumple exactamente lo mismo con
+  mucho menos esfuerzo.
+- Si nunca activas el paso 3.2, el script de la Parte 2 no hace nada por sí solo: la tabla y la
+  función quedan creadas pero sin usarse, y el registro sigue abierto como antes.
+
+---
+
+## Parte 4 · Copias de seguridad automáticas
+
+Además de todo lo anterior, la app guarda sola una versión de tus datos, como mucho una vez
+al día, justo antes de reemplazar lo que ya tenías guardado. Así, si algún día algo saliera
+mal — un error de la app, un "empezar de cero" sin querer, un dispositivo nuevo comportándose
+raro — siempre queda un punto reciente al que volver.
+
+No pide contraseña ni clave aparte: queda protegido exactamente igual que el resto de tus
+datos (solo tu usuario y contraseña pueden leerlo). No hace falta configurar nada más: si ya
+corriste el `supabase.sql` actualizado, esto ya está funcionando.
+
+**Para ver o restaurar una copia:** dentro de la app, menú "Datos" → "Ver copias automáticas".
+Vas a ver una lista con la fecha de cada una y cuántos movimientos tenía guardados en ese
+momento. El botón "Restaurar" reemplaza lo que tienes ahora por esa copia — pide confirmación
+antes, porque no se puede deshacer.
+
+Se conservan las 20 copias más recientes por persona; las más viejas se van borrando solas.
+
+---
+
 ## Cosas que conviene saber
 
 - **La clave publishable es pública a propósito.** Cualquiera puede verla en el código
@@ -124,3 +194,8 @@ Queda con ícono propio y se abre a pantalla completa, como una aplicación.
   personal no suele ser un problema.
 - **Para actualizar la app**, sube de nuevo `index.html` al repositorio: GitHub Pages
   publica los cambios en menos de un minuto.
+- **Seguridad**: la app escapa todo el texto que tú mismo escribes antes de mostrarlo (para
+  que no pueda interpretarse como código), neutraliza fórmulas al exportar a CSV, cierra la
+  sesión también del lado del servidor (no solo en el navegador) y declara una política de
+  seguridad de contenido (CSP) que bloquea scripts y conexiones a cualquier sitio que no sea
+  el tuyo. La base de datos también limita el tamaño máximo de cada fila como red de seguridad.
