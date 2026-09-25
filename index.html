@@ -330,11 +330,35 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
     <label>Método de pago
       <select name="metodo" id="f-metodo"></select>
     </label>
+    <label class="ancho" id="campo-cuenta-mov" hidden>Cuenta (opcional)
+      <select name="cuentaId" id="f-cuenta"></select>
+    </label>
     <label class="ancho">Notas<textarea name="notas" rows="2"></textarea></label>
     <div class="dlg-pie">
       <button type="button" class="btn peligro" id="btn-borrar-mov" hidden>Eliminar</button>
       <button type="button" class="btn" id="btn-cancelar">Cancelar</button>
       <button type="submit" class="btn primario" id="btn-guardar-mov">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-transferencia">
+  <div class="dlg-cab"><h3 id="transf-titulo" class="serif">Transferir entre cuentas</h3></div>
+  <form class="mov" id="form-transferencia" method="dialog">
+    <label>Fecha<input type="date" name="fecha" required></label>
+    <label>Monto<input type="number" name="monto" min="0" step="1" required placeholder="0"></label>
+    <label class="ancho">De la cuenta
+      <select name="origenId" id="tr-origen" required></select>
+    </label>
+    <label class="ancho">A la cuenta
+      <select name="destinoId" id="tr-destino" required></select>
+    </label>
+    <label class="ancho">Notas<textarea name="notas" rows="2" placeholder="Ej. traslado para pagar la tarjeta"></textarea></label>
+    <p class="acc-error" id="transf-error" hidden></p>
+    <div class="dlg-pie">
+      <button type="button" class="btn peligro" id="btn-borrar-transf" hidden>Eliminar</button>
+      <button type="button" class="btn" id="btn-cancelar-transf">Cancelar</button>
+      <button type="submit" class="btn primario">Guardar</button>
     </div>
   </form>
 </dialog>
@@ -379,7 +403,7 @@ const SEMILLA = {
 };
 const VISTAS = [
   ["panel","Panel"],["movimientos","Movimientos"],["categorias","Categorías"],
-  ["resumen","Resumen anual"],["comparativas","Comparativas"],["deudas","Deudas"],["inversiones","Inversiones"]
+  ["resumen","Resumen anual"],["comparativas","Comparativas"],["cuentas","Cuentas"],["deudas","Deudas"],["inversiones","Inversiones"]
 ];
 const CLAVE_LOCAL = "finanzas-personales:v1";
 
@@ -463,7 +487,7 @@ function semillaEstado(){
   // que datos reales guardados hace rato, y la app terminaría subiendo esta
   // libreta vacía por encima de ellos. Con 0, cualquier dato real (con una
   // fecha de verdad) siempre gana la comparación.
-  return { version:1, anio:anioIni, mes:mesIni, categorias, movimientos, actualizado:0 };
+  return { version:1, anio:anioIni, mes:mesIni, categorias, movimientos, cuentas:[], transferencias:[], actualizado:0 };
 }
 function sanear(e){
   if(!e || typeof e !== "object") return semillaEstado();
@@ -485,7 +509,17 @@ function sanear(e){
       tipo: TIPOS.includes(m.tipo) ? m.tipo : "Gastos Variables y Ocio",
       categoriaId: String(m.categoriaId || ""), descripcion: String(m.descripcion || ""),
       monto: Math.abs(Number(m.monto) || 0), metodo: String(m.metodo || ""),
+      cuentaId: m.cuentaId ? String(m.cuentaId) : null,
       notas: String(m.notas || ""), ejemplo: !!m.ejemplo
+    })) : [],
+    cuentas: Array.isArray(e.cuentas) ? e.cuentas.map(c => ({
+      id: String(c.id || uid()), nombre: String(c.nombre || "Sin nombre"),
+      saldoInicial: Number(c.saldoInicial) || 0
+    })) : [],
+    transferencias: Array.isArray(e.transferencias) ? e.transferencias.map(t => ({
+      id: String(t.id || uid()), fecha: String(t.fecha || isoHoy()).slice(0,10),
+      origenId: String(t.origenId || ""), destinoId: String(t.destinoId || ""),
+      monto: Math.abs(Number(t.monto) || 0), notas: String(t.notas || "")
     })) : [],
     // Number(e.actualizado) || Date.now() convertía un 0 legítimo de vuelta
     // en "ahora mismo" (0 se evalúa como falso en JS), reabriendo la misma
@@ -494,11 +528,33 @@ function sanear(e){
   };
   const ids = new Set(out.categorias.map(c => c.id));
   out.movimientos = out.movimientos.filter(m => ids.has(m.categoriaId));
+  const idsCuentas = new Set(out.cuentas.map(c => c.id));
+  out.movimientos.forEach(m => { if(m.cuentaId && !idsCuentas.has(m.cuentaId)) m.cuentaId = null; });
+  out.transferencias = out.transferencias.filter(t => idsCuentas.has(t.origenId) && idsCuentas.has(t.destinoId) && t.origenId !== t.destinoId);
   return out;
 }
 const catPorId = id => estado.categorias.find(c => c.id === id);
 const nombreCat = id => (catPorId(id) || {nombre:"—"}).nombre;
 const catsDe = tipo => estado.categorias.filter(c => c.tipo === tipo);
+const cuentaPorId = id => estado.cuentas.find(c => c.id === id);
+const nombreCuenta = id => id ? (cuentaPorId(id) || {nombre:"—"}).nombre : null;
+// Entradas: movimientos de tipo Ingresos tocan esta cuenta hacia arriba.
+// Cualquier otro tipo (Gastos, Ahorro, Deuda, Inversión) resta, porque esa
+// plata salió de la cuenta. Las transferencias entre cuentas propias se
+// calculan aparte, ya que no son ni ingreso ni gasto real.
+function entradasCuenta(cuentaId){
+  return estado.movimientos.reduce((s,m) => s + (m.cuentaId === cuentaId && m.tipo === "Ingresos" ? m.monto : 0), 0)
+    + estado.transferencias.reduce((s,t) => s + (t.destinoId === cuentaId ? t.monto : 0), 0);
+}
+function salidasCuenta(cuentaId){
+  return estado.movimientos.reduce((s,m) => s + (m.cuentaId === cuentaId && m.tipo !== "Ingresos" ? m.monto : 0), 0)
+    + estado.transferencias.reduce((s,t) => s + (t.origenId === cuentaId ? t.monto : 0), 0);
+}
+function saldoCuenta(cuentaId){
+  const c = cuentaPorId(cuentaId);
+  if(!c) return 0;
+  return c.saldoInicial + entradasCuenta(cuentaId) - salidasCuenta(cuentaId);
+}
 
 /* ============ persistencia y sincronización ============ */
 /* ┌──────────────────────────────────────────────────────────────────┐
@@ -1071,9 +1127,10 @@ function vistaMovimientos(){
   let lista = estado.movimientos.slice();
   if(filtros.soloMes) lista = lista.filter(m => { const p = partesFecha(m.fecha); return p.a === estado.anio && p.m === estado.mes; });
   if(filtros.tipo) lista = lista.filter(m => m.tipo === filtros.tipo);
+  if(filtros.cuenta) lista = lista.filter(m => m.cuentaId === filtros.cuenta);
   if(filtros.texto){
     const q = filtros.texto.toLowerCase();
-    lista = lista.filter(m => (m.descripcion + " " + nombreCat(m.categoriaId) + " " + m.notas + " " + m.metodo).toLowerCase().includes(q));
+    lista = lista.filter(m => (m.descripcion + " " + nombreCat(m.categoriaId) + " " + m.notas + " " + m.metodo + " " + (nombreCuenta(m.cuentaId) || "")).toLowerCase().includes(q));
   }
   lista.sort((x,y) => x.fecha < y.fecha ? 1 : x.fecha > y.fecha ? -1 : 0);
   const total = lista.reduce((s,m) => s + (m.tipo === "Ingresos" ? m.monto : -m.monto), 0);
@@ -1096,6 +1153,10 @@ function vistaMovimientos(){
         <option value="">Todos los tipos</option>
         ${TIPOS.map(t => `<option value="${esc(t)}" ${filtros.tipo === t ? "selected" : ""}>${esc(t)}</option>`).join("")}
       </select>
+      ${estado.cuentas.length ? `<select id="f-filtro-cuenta">
+        <option value="">Todas las cuentas</option>
+        ${estado.cuentas.map(c => `<option value="${esc(c.id)}" ${filtros.cuenta === c.id ? "selected" : ""}>${esc(c.nombre)}</option>`).join("")}
+      </select>` : ""}
       <label class="check"><input type="checkbox" id="f-solo-mes" ${filtros.soloMes ? "checked" : ""}> Solo ${esc(MESES[estado.mes-1])} ${estado.anio}</label>
       <span class="tenue" style="margin-left:auto">${totalEncontrados} movimiento${totalEncontrados === 1 ? "" : "s"} · neto ${money(total)}</span>
     </div>
@@ -1103,13 +1164,13 @@ function vistaMovimientos(){
     ${hayEjemplos ? `<div class="cinta"><span>Hay 5 movimientos de ejemplo cargados para que veas cómo funciona.</span><button class="btn chico" id="btn-quitar-ejemplos">Borrar los ejemplos</button></div>` : ""}
     <div class="tarjeta" style="margin-top:12px; overflow:hidden">
       ${lista.length ? `<div class="scroll-x"><table>
-        <thead><tr><th class="fija">Fecha</th><th style="text-align:left">Categoría</th><th style="text-align:left">Descripción</th><th>Monto</th><th style="text-align:left">Método</th><th></th></tr></thead>
+        <thead><tr><th class="fija">Fecha</th><th style="text-align:left">Categoría</th><th style="text-align:left">Descripción</th><th>Monto</th><th style="text-align:left">Método / cuenta</th><th></th></tr></thead>
         <tbody>${lista.map(m => `<tr>
           <td class="fija">${esc(fechaLarga(m.fecha))}</td>
           <td style="text-align:left"><i class="punto" style="background:${COLOR[m.tipo]}"></i>${esc(nombreCat(m.categoriaId))}<div class="tenue" style="font-size:11.5px; padding-left:16px">${esc(m.tipo)}</div></td>
           <td style="text-align:left; white-space:normal; max-width:280px">${esc(m.descripcion) || '<span class="tenue">—</span>'}${m.notas ? `<div class="tenue" style="font-size:11.5px">${esc(m.notas)}</div>` : ""}</td>
           <td class="${m.tipo === "Ingresos" ? "pos" : ""}">${m.tipo === "Ingresos" ? "+" : "−"}${money(m.monto)}</td>
-          <td style="text-align:left">${esc(m.metodo) || '<span class="tenue">—</span>'}</td>
+          <td style="text-align:left">${esc(m.metodo) || '<span class="tenue">—</span>'}${m.cuentaId ? `<div class="tenue" style="font-size:11.5px">${esc(nombreCuenta(m.cuentaId))}</div>` : ""}</td>
           <td><button class="btn chico" data-editar="${esc(m.id)}">Editar</button></td>
         </tr>`).join("")}</tbody></table></div>`
       : `<div class="vacio"><strong>Nada registrado todavía</strong>Usa “Registrar movimiento” para agregar tu primer ingreso o gasto.</div>`}
@@ -1291,6 +1352,65 @@ function vistaComparativas(){
   </div>`;
 }
 
+function vistaCuentas(){
+  const cuentas = estado.cuentas;
+  const tot = cuentas.reduce((acc,c) => {
+    acc.inicial += c.saldoInicial; acc.entradas += entradasCuenta(c.id); acc.salidas += salidasCuenta(c.id);
+    acc.saldo += saldoCuenta(c.id);
+    return acc;
+  }, {inicial:0, entradas:0, salidas:0, saldo:0});
+  const transf = estado.transferencias.slice().sort((a,b) => a.fecha < b.fecha ? 1 : a.fecha > b.fecha ? -1 : 0);
+
+  return `
+  <div class="seccion">
+    <h2>Cuentas</h2>
+    <p class="sub">Para llevar el saldo real de cada banco o billetera por separado. Es opcional: si no la necesitas, el resto de la app funciona igual sin tocar esto.</p>
+    <div class="tarjeta" style="overflow:hidden">
+      ${cuentas.length ? `<div class="scroll-x"><table>
+        <thead><tr><th class="fija" style="min-width:170px">Cuenta</th><th>Saldo inicial</th><th>Entradas</th><th>Salidas</th><th>Saldo actual</th><th></th></tr></thead>
+        <tbody>
+        ${cuentas.map(c => {
+          const entra = entradasCuenta(c.id), sale = salidasCuenta(c.id), saldo = saldoCuenta(c.id);
+          return `<tr>
+            <td class="fija"><input class="txt-in editable" value="${esc(c.nombre)}" data-cuenta="${esc(c.id)}" data-campo="nombre"></td>
+            <td><input class="num-in editable" type="number" min="0" step="1000" value="${c.saldoInicial || 0}" data-cuenta="${esc(c.id)}" data-campo="saldoInicial"></td>
+            <td class="pos">${entra ? "+" + money(entra) : '<span class="tenue">—</span>'}</td>
+            <td class="neg">${sale ? "−" + money(sale) : '<span class="tenue">—</span>'}</td>
+            <td style="font-weight:500">${money(saldo)}</td>
+            <td><button class="btn chico peligro" data-borrar-cuenta="${esc(c.id)}">Eliminar</button></td>
+          </tr>`;
+        }).join("")}
+        <tr class="total"><td class="fija">Total</td><td>${money(tot.inicial)}</td><td class="pos">+${money(tot.entradas)}</td><td class="neg">−${money(tot.salidas)}</td><td style="font-weight:500">${money(tot.saldo)}</td><td></td></tr>
+        </tbody>
+      </table></div>`
+      : `<div class="vacio"><strong>Todavía no tienes cuentas registradas</strong>Agrega una por cada banco o billetera cuyo saldo quieras llevar por separado.</div>`}
+      <div style="padding:12px 14px"><button class="btn chico" id="btn-nueva-cuenta">Agregar cuenta</button></div>
+    </div>
+    <p class="nota">El saldo inicial es lo que tenías en esa cuenta el día que empezaste a usar la app, no el total histórico. Para sumarle o restarle, marca esa cuenta en el campo "Cuenta" al registrar un movimiento.</p>
+  </div>
+
+  <div class="seccion">
+    <h2>Transferencias entre tus cuentas</h2>
+    <p class="sub">Cuando mueves dinero de una cuenta tuya a otra (o lo lees por QR desde el banco), regístralo aquí — así nunca se confunde con un gasto o un ingreso real, y tu remanente del mes no se ve afectado.</p>
+    <div class="tarjeta" style="overflow:hidden">
+      ${cuentas.length < 2
+        ? `<div class="vacio">Necesitas al menos 2 cuentas creadas arriba para poder registrar una transferencia entre ellas.</div>`
+        : transf.length ? `<div class="scroll-x"><table>
+            <thead><tr><th class="fija">Fecha</th><th style="text-align:left">De</th><th style="text-align:left">A</th><th>Monto</th><th></th></tr></thead>
+            <tbody>${transf.map(t => `<tr>
+              <td class="fija">${esc(fechaLarga(t.fecha))}</td>
+              <td style="text-align:left">${esc(nombreCuenta(t.origenId))}</td>
+              <td style="text-align:left">${esc(nombreCuenta(t.destinoId))}</td>
+              <td>${money(t.monto)}</td>
+              <td><button class="btn chico" data-editar-transf="${esc(t.id)}">Editar</button></td>
+            </tr>`).join("")}</tbody>
+          </table></div>`
+          : `<div class="vacio">Todavía no has registrado ninguna transferencia.</div>`}
+      ${cuentas.length >= 2 ? `<div style="padding:12px 14px"><button class="btn chico" id="btn-nueva-transferencia">Nueva transferencia</button></div>` : ""}
+    </div>
+  </div>`;
+}
+
 function vistaDeudas(){
   const cats = catsDe("Deuda");
   const tot = cats.reduce((acc,c) => {
@@ -1377,6 +1497,7 @@ function render(){
   else if(vista === "categorias") html = vistaCategorias();
   else if(vista === "resumen") html = vistaResumen();
   else if(vista === "comparativas") html = vistaComparativas();
+  else if(vista === "cuentas") html = vistaCuentas();
   else if(vista === "deudas") html = vistaDeudas();
   else if(vista === "inversiones") html = vistaInversiones();
   if(!cont) return;
@@ -1424,17 +1545,21 @@ function abrirMov(id){
   const ft = document.getElementById("f-tipo");
   ft.innerHTML = TIPOS.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
   document.getElementById("f-metodo").innerHTML = '<option value=""></option>' + METODOS.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
+  const campoCuenta = document.getElementById("campo-cuenta-mov");
+  campoCuenta.hidden = estado.cuentas.length === 0;
+  document.getElementById("f-cuenta").innerHTML = '<option value="">— (no aplica)</option>' + estado.cuentas.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join("");
   const m = id ? estado.movimientos.find(x => x.id === id) : null;
   document.getElementById("dlg-titulo").textContent = m ? "Editar movimiento" : "Nuevo movimiento";
   document.getElementById("btn-borrar-mov").hidden = !m;
   if(m){
     f.fecha.value = m.fecha; f.tipo.value = m.tipo; llenarCategoriasForm(m.tipo, m.categoriaId);
     f.descripcion.value = m.descripcion; f.monto.value = m.monto; f.metodo.value = m.metodo; f.notas.value = m.notas;
+    f.cuentaId.value = m.cuentaId || "";
   }else{
     const d = new Date(estado.anio, estado.mes-1, Math.min(hoy.getDate(), new Date(estado.anio, estado.mes, 0).getDate()));
     f.fecha.value = new Date(d.getTime() - d.getTimezoneOffset()*60000).toISOString().slice(0,10);
     f.tipo.value = "Gastos Variables y Ocio"; llenarCategoriasForm(f.tipo.value, null);
-    f.descripcion.value = ""; f.monto.value = ""; f.metodo.value = ""; f.notas.value = "";
+    f.descripcion.value = ""; f.monto.value = ""; f.metodo.value = ""; f.notas.value = ""; f.cuentaId.value = "";
   }
   dlg.showModal();
   setTimeout(() => { try{ f.monto.focus(); }catch(_){} }, 40);
@@ -1457,6 +1582,7 @@ function montarDialogo(){
       descripcion: f.descripcion.value.trim(),
       monto: Math.abs(num(f.monto.value)),
       metodo: f.metodo.value,
+      cuentaId: f.cuentaId.value || null,
       notas: f.notas.value.trim()
     };
     if(!datos.categoriaId || !datos.monto){ return; }
@@ -1469,6 +1595,59 @@ function montarDialogo(){
       if(p.a && p.m){ estado.anio = p.a; estado.mes = p.m; sincronizarControles(); }
     }
     marcar(); dlg.close(); render();
+  });
+}
+
+/* ---- transferencias entre cuentas propias ---- */
+let editandoTransfId = null;
+const dlgTransf = document.getElementById("dlg-transferencia");
+function abrirTransferencia(id){
+  editandoTransfId = id || null;
+  const f = document.getElementById("form-transferencia");
+  const opciones = estado.cuentas.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join("");
+  document.getElementById("tr-origen").innerHTML = opciones;
+  document.getElementById("tr-destino").innerHTML = opciones;
+  document.getElementById("transf-titulo").textContent = id ? "Editar transferencia" : "Transferir entre cuentas";
+  document.getElementById("btn-borrar-transf").hidden = !id;
+  document.getElementById("transf-error").hidden = true;
+  const t = id ? estado.transferencias.find(x => x.id === id) : null;
+  if(t){
+    f.fecha.value = t.fecha; f.origenId.value = t.origenId; f.destinoId.value = t.destinoId;
+    f.monto.value = t.monto; f.notas.value = t.notas;
+  }else{
+    f.fecha.value = isoHoy(); f.origenId.value = estado.cuentas[0].id;
+    f.destinoId.value = (estado.cuentas[1] || estado.cuentas[0]).id;
+    f.monto.value = ""; f.notas.value = "";
+  }
+  dlgTransf.showModal();
+  setTimeout(() => { try{ f.monto.focus(); }catch(_){} }, 40);
+}
+function montarTransferencia(){
+  const f = document.getElementById("form-transferencia");
+  document.getElementById("btn-cancelar-transf").addEventListener("click", () => dlgTransf.close());
+  document.getElementById("btn-borrar-transf").addEventListener("click", () => {
+    if(!editandoTransfId) return;
+    estado.transferencias = estado.transferencias.filter(x => x.id !== editandoTransfId);
+    marcar(); dlgTransf.close(); render();
+  });
+  f.addEventListener("submit", e => {
+    e.preventDefault();
+    const err = document.getElementById("transf-error");
+    const datos = {
+      fecha: f.fecha.value || isoHoy(),
+      origenId: f.origenId.value, destinoId: f.destinoId.value,
+      monto: Math.abs(num(f.monto.value)), notas: f.notas.value.trim()
+    };
+    if(datos.origenId === datos.destinoId){
+      err.textContent = "La cuenta de origen y la de destino no pueden ser la misma."; err.hidden = false; return;
+    }
+    if(!datos.monto){ err.textContent = "Escribe un monto mayor a cero."; err.hidden = false; return; }
+    if(editandoTransfId){
+      Object.assign(estado.transferencias.find(x => x.id === editandoTransfId), datos);
+    }else{
+      estado.transferencias.push(Object.assign({id:uid()}, datos));
+    }
+    marcar(); dlgTransf.close(); render();
   });
 }
 
@@ -1502,9 +1681,38 @@ function montarVistaEventos(){
       marcar(); render();
       return;
     }
+    if(e.target.id === "btn-nueva-cuenta"){
+      estado.cuentas.push({id:uid(), nombre:"Nueva cuenta", saldoInicial:0});
+      marcar(); render();
+      const inputs = cont.querySelectorAll('input[data-campo="nombre"][data-cuenta]');
+      const objetivo = Array.from(inputs).find(i => i.value === "Nueva cuenta") || inputs[inputs.length-1];
+      if(objetivo){ objetivo.focus(); objetivo.select(); }
+      return;
+    }
+    const borrarCuenta = e.target.closest("[data-borrar-cuenta]");
+    if(borrarCuenta){
+      const id = borrarCuenta.dataset.borrarCuenta;
+      const usada = estado.movimientos.some(m => m.cuentaId === id) || estado.transferencias.some(t => t.origenId === id || t.destinoId === id);
+      if(usada){ alert("Esta cuenta tiene movimientos o transferencias asociadas. Cámbialos o bórralos antes de eliminarla."); return; }
+      if(!confirm("¿Eliminar la cuenta “" + nombreCuenta(id) + "”?")) return;
+      estado.cuentas = estado.cuentas.filter(c => c.id !== id);
+      marcar(); render();
+      return;
+    }
+    if(e.target.id === "btn-nueva-transferencia"){ abrirTransferencia(null); return; }
+    const editarTransf = e.target.closest("[data-editar-transf]");
+    if(editarTransf){ abrirTransferencia(editarTransf.dataset.editarTransf); return; }
   });
   cont.addEventListener("change", e => {
     const t = e.target;
+    if(t.dataset && t.dataset.cuenta){
+      const c = cuentaPorId(t.dataset.cuenta);
+      if(!c) return;
+      if(t.dataset.campo === "nombre") c.nombre = t.value.trim() || "Sin nombre";
+      else c.saldoInicial = Math.max(0, num(t.value));
+      marcar(); render();
+      return;
+    }
     if(t.dataset && t.dataset.cat){
       const c = catPorId(t.dataset.cat);
       if(!c) return;
@@ -1530,7 +1738,7 @@ function montarVistaEventos(){
 
 /* ============ menú de datos ============ */
 function csvMovimientos(){
-  const cab = ["Fecha","Tipo","Categoría","Descripción","Monto","Método de pago","Notas"];
+  const cab = ["Fecha","Tipo","Categoría","Descripción","Monto","Método de pago","Cuenta","Notas"];
   // Si una descripción, nota o nombre de categoría empezara con = + - @ (o un
   // tabulador), Excel o Google Sheets podrían interpretarla como una fórmula
   // al abrir el archivo, no como texto. Se antepone un apóstrofo para que
@@ -1543,7 +1751,7 @@ function csvMovimientos(){
   };
   const q = v => '"' + csvSeguro(v).replace(/"/g,'""') + '"';
   const filas = estado.movimientos.slice().sort((a,b) => a.fecha < b.fecha ? -1 : 1)
-    .map(m => [m.fecha, m.tipo, nombreCat(m.categoriaId), m.descripcion, m.monto, m.metodo, m.notas].map(q).join(";"));
+    .map(m => [m.fecha, m.tipo, nombreCat(m.categoriaId), m.descripcion, m.monto, m.metodo, nombreCuenta(m.cuentaId) || "", m.notas].map(q).join(";"));
   return "\uFEFF" + cab.map(q).join(";") + "\n" + filas.join("\n");
 }
 async function descargar(nombre, contenido, titulo, sub){
@@ -1715,7 +1923,7 @@ function arrancar(){
   sesion = leerJson(CLAVE_SESION); // se lee antes de la caché para que claveEstado() ya sepa de quién es
   const local = leerLocal();
   estado = local ? sanear(local) : semillaEstado();
-  montarTabs(); montarPeriodo(); montarDialogo(); montarVistaEventos(); montarMenu(); montarAcceso(); montarInactividad(); montarHistorial();
+  montarTabs(); montarPeriodo(); montarDialogo(); montarTransferencia(); montarVistaEventos(); montarMenu(); montarAcceso(); montarInactividad(); montarHistorial();
   sincronizarControles();
   setEstadoGuardado("");
   render();
