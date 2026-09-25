@@ -500,7 +500,7 @@ function sanear(e){
       id: String(c.id || uid()), nombre: String(c.nombre || "Sin nombre"),
       tipo: TIPOS.includes(c.tipo) ? c.tipo : "Gastos Variables y Ocio",
       presupuesto: Number(c.presupuesto) || 0,
-      dia: c.dia == null || c.dia === "" ? null : Math.min(31, Math.max(1, Number(c.dia) || 1)),
+      dia: (c.dia == null || c.dia === "" || Number(c.dia) <= 0) ? null : Math.min(31, Math.max(1, Math.round(Number(c.dia)))),
       saldoInicial: Number(c.saldoInicial) || 0, pagoMensual: Number(c.pagoMensual) || 0,
       aporteInicial: Number(c.aporteInicial) || 0, valorActual: Number(c.valorActual) || 0
     })) : base.categorias,
@@ -1030,7 +1030,7 @@ function vistaPanel(){
 
   // próximos pagos
   const pagos = estado.categorias
-    .filter(c => (c.tipo === "Gastos Fijos" || c.tipo === "Deuda") && c.dia)
+    .filter(c => (c.tipo === "Gastos Fijos" || c.tipo === "Deuda") && c.dia > 0)
     .map(c => {
       const programado = c.tipo === "Deuda" ? (c.pagoMensual || c.presupuesto || 0) : (c.presupuesto || 0);
       const real = sumaCat(a, m, c.id);
@@ -1203,7 +1203,7 @@ function vistaCategorias(){
             return `<tr>
               <td class="fija"><input class="txt-in editable" value="${esc(c.nombre)}" data-cat="${esc(c.id)}" data-campo="nombre"></td>
               <td><input class="num-in editable" type="number" min="0" step="1000" value="${c.presupuesto || 0}" data-cat="${esc(c.id)}" data-campo="presupuesto"></td>
-              ${usaDia ? `<td><input class="num-in corto editable" type="number" min="1" max="31" step="1" value="${c.dia == null ? "" : c.dia}" placeholder="—" data-cat="${esc(c.id)}" data-campo="dia"></td>` : ""}
+              ${usaDia ? `<td><div style="display:flex; gap:4px; align-items:center"><input class="num-in corto editable" type="number" min="1" max="31" step="1" value="${c.dia == null ? "" : c.dia}" placeholder="—" data-cat="${esc(c.id)}" data-campo="dia">${c.dia != null ? `<button class="btn chico" data-quitar-dia="${esc(c.id)}" title="Quitar el día de vencimiento">✕</button>` : ""}</div></td>` : ""}
               <td class="${sobre ? "neg" : ""}">${money(real)}</td>
               <td><button class="btn chico peligro" data-borrar-cat="${esc(c.id)}" title="Eliminar categoría">Eliminar</button></td>
             </tr>`;
@@ -1438,7 +1438,7 @@ function vistaDeudas(){
             <td>${money(pagado)}</td>
             <td class="${saldo > 0 ? "" : "pos"}">${money(saldo)}</td>
             <td>${avance == null ? '<span class="tenue">—</span>' : `<div style="display:flex; gap:8px; align-items:center"><div class="barra" style="flex:1"><i style="width:${(avance*100).toFixed(1)}%; background:var(--ciruela)"></i></div><span style="font-size:12px">${pct(avance,0)}</span></div>`}</td>
-            <td><input class="num-in corto editable" type="number" min="1" max="31" step="1" value="${c.dia == null ? "" : c.dia}" placeholder="—" data-cat="${esc(c.id)}" data-campo="dia"></td>
+            <td><div style="display:flex; gap:4px; align-items:center"><input class="num-in corto editable" type="number" min="1" max="31" step="1" value="${c.dia == null ? "" : c.dia}" placeholder="—" data-cat="${esc(c.id)}" data-campo="dia">${c.dia != null ? `<button class="btn chico" data-quitar-dia="${esc(c.id)}" title="Quitar el día de vencimiento">✕</button>` : ""}</div></td>
           </tr>`;
         }).join("")}
         <tr class="total"><td class="fija">Total</td><td>${money(tot.inicial)}</td><td>${money(tot.mensual)}</td><td>${money(tot.pagado)}</td><td>${money(tot.saldo)}</td><td></td><td></td></tr>
@@ -1676,6 +1676,12 @@ function montarVistaEventos(){
       marcar(); render();
       return;
     }
+    const quitarDia = e.target.closest("[data-quitar-dia]");
+    if(quitarDia){
+      const c = catPorId(quitarDia.dataset.quitarDia);
+      if(c){ c.dia = null; marcar(); render(); }
+      return;
+    }
     if(e.target.id === "btn-quitar-ejemplos"){
       estado.movimientos = estado.movimientos.filter(m => !m.ejemplo);
       marcar(); render();
@@ -1718,7 +1724,7 @@ function montarVistaEventos(){
       if(!c) return;
       const campo = t.dataset.campo;
       if(campo === "nombre") c.nombre = t.value.trim() || "Sin nombre";
-      else if(campo === "dia") c.dia = t.value === "" ? null : Math.min(31, Math.max(1, Math.round(num(t.value))));
+      else if(campo === "dia") c.dia = (t.value === "" || num(t.value) <= 0) ? null : Math.min(31, Math.max(1, Math.round(num(t.value))));
       else c[campo] = Math.max(0, num(t.value));
       marcar(); render();
       return;
