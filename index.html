@@ -63,6 +63,27 @@ button,input,select,textarea{font:inherit; color:inherit}
 .wrap{max-width:1120px; margin:0 auto; padding:0 16px 96px}
 
 /* ---------- cabecera ---------- */
+.app-shell{display:flex; align-items:flex-start; min-height:100vh}
+.app-main{flex:1 1 auto; min-width:0}
+.sidebar{display:none}
+@media (min-width:860px){
+  .sidebar{
+    display:flex; flex-direction:column; gap:22px; width:222px; flex-shrink:0;
+    padding:24px 14px; position:sticky; top:0; height:100vh; overflow-y:auto;
+    background:var(--surface); border-right:1px solid var(--line-soft);
+  }
+  .sidebar-marca{font-size:17px; font-weight:800; padding:0 10px; display:flex; align-items:center; gap:8px}
+  .sidebar-nav{display:flex; flex-direction:column; gap:2px}
+  .sidebar-nav button{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    background:none; border:0; border-radius:14px; padding:11px 14px;
+    font-size:14px; font-weight:500; color:var(--ink-3); cursor:pointer;
+  }
+  .sidebar-nav button:hover{background:var(--surface-2); color:var(--ink)}
+  .sidebar-nav button[aria-current="true"]{background:var(--sel-soft); color:var(--sel); font-weight:700}
+  /* En escritorio la barra lateral reemplaza a las pestañas de arriba. */
+  nav.tabs{display:none}
+}
 header.top{border-bottom:1px solid var(--line); background:var(--surface)}
 .top-in{max-width:1120px; margin:0 auto; padding:14px 16px 10px; display:flex; flex-wrap:wrap; gap:14px 20px; align-items:flex-end}
 .marca{flex:1 1 220px; min-width:0}
@@ -144,6 +165,7 @@ nav.tabs button[aria-current="true"]{color:var(--ink); background:var(--surface)
 .hero .aviso.neutro{color:#4B475E}
 
 .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:10px; margin-top:14px}
+@media (min-width:860px){.kpis{grid-template-columns:repeat(4,1fr)}}
 .kpi{padding:13px 14px}
 .kpi .etq{font-size:12.5px; color:var(--ink-3); font-weight:300}
 .kpi .num{font-size:21px; margin-top:5px; letter-spacing:.015em; font-weight:800; font-variant-numeric:tabular-nums}
@@ -299,35 +321,43 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
   </div>
 </div>
 
-<header class="top">
-  <div class="top-in">
-    <div class="marca">
-      <h1 class="serif">Control de finanzas personales</h1>
-      <p id="sub-marca">Ingresos, gastos, ahorro, deudas e inversiones en un solo lugar.</p>
-    </div>
-    <div class="periodo">
-      <div class="campo">
-        <label for="sel-mes">Mes</label>
-        <select id="sel-mes"></select>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sidebar-marca">📒 <span>Finanzas</span></div>
+    <nav class="sidebar-nav" id="tabs-lado"></nav>
+  </aside>
+  <div class="app-main">
+    <header class="top">
+      <div class="top-in">
+        <div class="marca">
+          <h1 class="serif">Control de finanzas personales</h1>
+          <p id="sub-marca">Ingresos, gastos, ahorro, deudas e inversiones en un solo lugar.</p>
+        </div>
+        <div class="periodo">
+          <div class="campo">
+            <label for="sel-mes">Mes</label>
+            <select id="sel-mes"></select>
+          </div>
+          <div class="campo">
+            <label for="sel-anio">Año</label>
+            <input id="sel-anio" type="number" min="2000" max="2100" step="1" style="width:88px">
+          </div>
+        </div>
+        <div class="acciones">
+          <span class="estado" id="estado-guardado"></span>
+          <div class="menu">
+            <button class="btn" id="btn-menu" aria-haspopup="true" aria-expanded="false">Datos</button>
+            <div class="menu-lista" id="menu-lista" hidden></div>
+          </div>
+          <button class="btn primario" id="btn-nuevo">Registrar movimiento</button>
+        </div>
       </div>
-      <div class="campo">
-        <label for="sel-anio">Año</label>
-        <input id="sel-anio" type="number" min="2000" max="2100" step="1" style="width:88px">
-      </div>
-    </div>
-    <div class="acciones">
-      <span class="estado" id="estado-guardado"></span>
-      <div class="menu">
-        <button class="btn" id="btn-menu" aria-haspopup="true" aria-expanded="false">Datos</button>
-        <div class="menu-lista" id="menu-lista" hidden></div>
-      </div>
-      <button class="btn primario" id="btn-nuevo">Registrar movimiento</button>
-    </div>
-  </div>
-  <nav class="tabs" id="tabs"></nav>
-</header>
+      <nav class="tabs" id="tabs"></nav>
+    </header>
 
-<main class="wrap" id="vista"></main>
+    <main class="wrap" id="vista"></main>
+  </div>
+</div>
 
 <button class="fab" id="fab">+ Movimiento</button>
 
@@ -418,8 +448,8 @@ const SEMILLA = {
   "Inversión":["Fondo de inversión colectiva","Acciones","CDT / Renta fija","Criptomonedas","Fondo de pensión voluntaria","Otra inversión"]
 };
 const VISTAS = [
-  ["panel","Panel"],["movimientos","Movimientos"],["categorias","Categorías"],
-  ["resumen","Resumen anual"],["comparativas","Comparativas"],["cuentas","Cuentas"],["deudas","Deudas"],["inversiones","Inversiones"]
+  ["panel","Panel","🏠"],["movimientos","Movimientos","📝"],["categorias","Categorías","🏷️"],
+  ["resumen","Resumen anual","📅"],["comparativas","Comparativas","🔀"],["cuentas","Cuentas","🏦"],["deudas","Deudas","💳"],["inversiones","Inversiones","📈"]
 ];
 const CLAVE_LOCAL = "finanzas-personales:v1";
 
@@ -1010,6 +1040,19 @@ function anillo(datos, tam){
     '<text x="'+cx+'" y="'+yNum.toFixed(1)+'" text-anchor="middle" font-size="'+(tam*0.115).toFixed(1)+'" font-weight="800" fill="currentColor" font-family="Plus Jakarta Sans, system-ui, sans-serif">'+moneyCorto(total)+'</text>'+
     '</svg>';
 }
+function barraArribaRedondeada(x, y, w, h, r){
+  // Rectángulo con solo las dos esquinas de arriba redondeadas: una columna
+  // de verdad apoyada en el piso, no una cápsula flotando.
+  r = Math.max(0, Math.min(r, w/2, h));
+  if(h <= 0) return "";
+  if(r === 0) return 'M'+x+' '+(y+h)+' L'+x+' '+y+' L'+(x+w)+' '+y+' L'+(x+w)+' '+(y+h)+' Z';
+  return 'M'+x+' '+(y+h)+
+    ' L'+x+' '+(y+r)+
+    ' Q'+x+' '+y+' '+(x+r)+' '+y+
+    ' L'+(x+w-r)+' '+y+
+    ' Q'+(x+w)+' '+y+' '+(x+w)+' '+(y+r)+
+    ' L'+(x+w)+' '+(y+h)+' Z';
+}
 function barrasAnio(anio){
   const ing = [], sal = [];
   for(let m=1; m<=12; m++){
@@ -1021,15 +1064,15 @@ function barrasAnio(anio){
   const W = 560, H = 190, base = H - 26, pad = 10;
   const paso = (W - pad*2) / 12, an = Math.min(11, paso/2 - 3);
   let g = "";
-  const radio = an/2; // extremos totalmente redondeados: cada barra es una cápsula, no un rectángulo
+  const radio = Math.min(5, an/2);
   for(let i=0; i<12; i++){
     const x = pad + paso*i + paso/2;
-    const hi = Math.max((ing[i]/max)*(base-14), ing[i]>0 ? an : 0);
-    const hs = Math.max((sal[i]/max)*(base-14), sal[i]>0 ? an : 0);
-    g += '<rect x="'+(x-an-1.5)+'" y="'+(base-hi)+'" width="'+an+'" height="'+Math.max(0,hi)+'" rx="'+radio+'" fill="var(--green)"><title>'+MES_CORTO[i]+': entra '+money(ing[i])+'</title></rect>';
-    g += '<rect x="'+(x+1.5)+'" y="'+(base-hs)+'" width="'+an+'" height="'+Math.max(0,hs)+'" rx="'+radio+'" fill="var(--clay)"><title>'+MES_CORTO[i]+': sale '+money(sal[i])+'</title></rect>';
+    const hi = (ing[i]/max)*(base-14), hs = (sal[i]/max)*(base-14);
+    g += '<path d="'+barraArribaRedondeada(x-an-1.5, base-hi, an, hi, radio)+'" fill="var(--green)"><title>'+MES_CORTO[i]+': entra '+money(ing[i])+'</title></path>';
+    g += '<path d="'+barraArribaRedondeada(x+1.5, base-hs, an, hs, radio)+'" fill="var(--clay)"><title>'+MES_CORTO[i]+': sale '+money(sal[i])+'</title></path>';
     g += '<text x="'+x+'" y="'+(H-8)+'" text-anchor="middle" font-size="10.5" font-family="Plus Jakarta Sans, system-ui, sans-serif" fill="var(--ink-3)">'+MES_CORTO[i]+'</text>';
   }
+  g += '<line x1="'+pad+'" y1="'+base+'" x2="'+(W-pad)+'" y2="'+base+'" stroke="var(--line)" stroke-width="1"/>';
   return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Entradas y salidas por mes">'+g+'</svg>';
 }
 
@@ -1529,7 +1572,7 @@ function render(){
   else if(vista === "inversiones") html = vistaInversiones();
   if(!cont) return;
   cont.innerHTML = html;
-  document.querySelectorAll("#tabs button").forEach(b => b.setAttribute("aria-current", b.dataset.vista === vista ? "true" : "false"));
+  document.querySelectorAll("#tabs button, #tabs-lado button").forEach(b => b.setAttribute("aria-current", b.dataset.vista === vista ? "true" : "false"));
   const quien = (backend === "supabase" && sesion && sesion.email) ? " · " + sesion.email : "";
   document.getElementById("sub-marca").textContent = MESES[estado.mes-1] + " de " + estado.anio + " · " + estado.movimientos.length + " movimientos en total" + quien;
   window.scrollTo(0, y);
@@ -1542,14 +1585,19 @@ function sincronizarControles(){
 
 /* ============ eventos ============ */
 function montarTabs(){
-  const nav = document.getElementById("tabs");
-  nav.innerHTML = VISTAS.map(([id,etq]) => `<button data-vista="${id}">${etq}</button>`).join("");
-  nav.addEventListener("click", e => {
+  const irA = e => {
     const b = e.target.closest("button[data-vista]");
     if(!b) return;
     vista = b.dataset.vista;
     render();
-  });
+  };
+  const nav = document.getElementById("tabs");
+  nav.innerHTML = VISTAS.map(([id,etq]) => `<button data-vista="${id}">${etq}</button>`).join("");
+  nav.addEventListener("click", irA);
+
+  const lado = document.getElementById("tabs-lado");
+  lado.innerHTML = VISTAS.map(([id,etq,icono]) => `<button data-vista="${id}"><span aria-hidden="true">${icono}</span> ${etq}</button>`).join("");
+  lado.addEventListener("click", irA);
 }
 function montarPeriodo(){
   const sm = document.getElementById("sel-mes");
