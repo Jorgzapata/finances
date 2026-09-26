@@ -133,6 +133,15 @@ nav.tabs button[aria-current="true"]{color:var(--ink); background:var(--surface)
 .hero .aviso.ok,.hero .aviso.alerta,.hero .aviso.mal,.hero .aviso.neutro{
   background:rgba(255,255,255,.90); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
 }
+/* El chip de aviso dentro del panel siempre es casi blanco (arriba), en las
+   dos apariencias. Si el texto usara var(--green)/(--ocre)/(--clay) tal
+   cual, en modo oscuro esas variables se vuelven CLARAS (pensadas para
+   texto sobre fondo oscuro) y quedarían casi invisibles sobre un chip
+   casi blanco. Se fija el mismo tono oscuro de la versión clara, siempre. */
+.hero .aviso.ok{color:#0E7A4F}
+.hero .aviso.alerta{color:#9C5C0C}
+.hero .aviso.mal{color:#C82F4A}
+.hero .aviso.neutro{color:#4B475E}
 
 .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(158px,1fr)); gap:10px; margin-top:14px}
 .kpi{padding:13px 14px}
@@ -965,21 +974,25 @@ function mesAnterior(anio, mes){ return mes === 1 ? {anio: anio-1, mes: 12} : {a
 
 /* ============ gráficos ============ */
 function anillo(datos, tam){
+  // Medio arco (180°) tipo velocímetro, con el total adentro y espacio
+  // separado entre cada tramo de color.
   const total = datos.reduce((s,d) => s + d.valor, 0);
   const vivos = datos.filter(d => d.valor > 0);
   if(!total) return '<div class="vacio">Todavía no hay salidas registradas en este mes.</div>';
-  const r = tam/2 - 6, ancho = r*0.42, rc = r - ancho/2, cx = tam/2, cy = tam/2;
+  const ancho = tam*0.20, rc = tam/2 - ancho/2 - 4, cx = tam/2, cy = tam/2;
+  const alto = cy + ancho/2 + 6;
   let partes = "";
+  const barrido = Math.PI; // medio círculo, de 180° a 360°
   if(vivos.length === 1){
-    partes = '<circle cx="'+cx+'" cy="'+cy+'" r="'+rc+'" fill="none" stroke="'+vivos[0].color+'" stroke-width="'+ancho+'" stroke-linecap="round"/>';
+    const a0 = Math.PI, a1 = 2*Math.PI;
+    const x0 = cx + rc*Math.cos(a0), y0 = cy + rc*Math.sin(a0);
+    const x1 = cx + rc*Math.cos(a1), y1 = cy + rc*Math.sin(a1);
+    partes = '<path d="M '+x0.toFixed(2)+' '+y0.toFixed(2)+' A '+rc+' '+rc+' 0 1 1 '+x1.toFixed(2)+' '+y1.toFixed(2)+'" fill="none" stroke="'+vivos[0].color+'" stroke-width="'+ancho+'" stroke-linecap="round"/>';
   }else{
-    // Un huequito angular entre segmentos (proporcional al radio) para que
-    // se vean como piezas separadas de extremos redondeados, no una sola
-    // rosquilla continua.
-    const hueco = Math.min(0.10, (ancho*0.9) / rc);
-    let a0 = -Math.PI/2;
+    const hueco = Math.min(0.08, (ancho*0.8) / rc);
+    let a0 = Math.PI;
     vivos.forEach(d => {
-      const a1 = a0 + 2*Math.PI*(d.valor/total);
+      const a1 = a0 + barrido*(d.valor/total);
       const ai = a0 + hueco/2, af = a1 - hueco/2;
       if(af > ai){
         const x0 = cx + rc*Math.cos(ai), y0 = cy + rc*Math.sin(ai);
@@ -990,10 +1003,11 @@ function anillo(datos, tam){
       a0 = a1;
     });
   }
-  return '<svg viewBox="0 0 '+tam+' '+tam+'" width="'+tam+'" height="'+tam+'" role="img" aria-label="Distribución de salidas del mes">'+
+  const yEtq = cy - rc*0.40, yNum = cy - rc*0.08;
+  return '<svg viewBox="0 0 '+tam+' '+alto.toFixed(1)+'" width="'+tam+'" height="'+alto.toFixed(1)+'" role="img" aria-label="Distribución de salidas del mes">'+
     partes +
-    '<text x="'+cx+'" y="'+(cy-2)+'" text-anchor="middle" font-size="19" font-weight="700" fill="currentColor" font-family="Plus Jakarta Sans, system-ui, sans-serif">'+moneyCorto(total)+'</text>'+
-    '<text x="'+cx+'" y="'+(cy+16)+'" text-anchor="middle" font-size="10.5" fill="var(--ink-3)">salidas del mes</text>'+
+    '<text x="'+cx+'" y="'+yEtq.toFixed(1)+'" text-anchor="middle" font-size="10.5" font-weight="300" fill="var(--ink-3)" font-family="Plus Jakarta Sans, system-ui, sans-serif">Salidas del mes</text>'+
+    '<text x="'+cx+'" y="'+yNum.toFixed(1)+'" text-anchor="middle" font-size="'+(tam*0.115).toFixed(1)+'" font-weight="800" fill="currentColor" font-family="Plus Jakarta Sans, system-ui, sans-serif">'+moneyCorto(total)+'</text>'+
     '</svg>';
 }
 function barrasAnio(anio){
@@ -1085,14 +1099,12 @@ function vistaPanel(){
   <div class="seccion duo">
     <section class="tarjeta panel">
       <h3>A dónde se fue el dinero</h3>
-      <div style="display:flex; gap:18px; align-items:center; flex-wrap:wrap">
-        <div style="flex:0 0 auto; color:var(--ink)">${anillo(datos, 168)}</div>
-        <div style="flex:1 1 180px; min-width:170px">
-          ${datos.map(d => `<div style="display:flex; justify-content:space-between; gap:12px; padding:4px 0; font-size:13.5px">
-            <span><i class="punto" style="background:${d.color}"></i>${esc(d.etq)}</span>
-            <span>${money(d.valor)} <span class="tenue">${totalSalidas ? pct(d.valor/totalSalidas, 0) : ""}</span></span>
-          </div>`).join("")}
-        </div>
+      <div style="display:flex; justify-content:center; color:var(--ink); margin:4px 0 10px">${anillo(datos, 210)}</div>
+      <div>
+        ${datos.map(d => `<div style="display:flex; justify-content:space-between; gap:12px; padding:7px 0; font-size:13.5px; border-top:1px solid var(--line-soft)">
+          <span><i class="punto" style="background:${d.color}"></i>${esc(d.etq)}</span>
+          <span>${money(d.valor)} <span class="tenue">${totalSalidas ? pct(d.valor/totalSalidas, 0) : ""}</span></span>
+        </div>`).join("")}
       </div>
     </section>
 
