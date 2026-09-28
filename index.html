@@ -172,7 +172,10 @@ nav.tabs button[aria-current="true"]{color:var(--ink); background:var(--surface)
 .kpi .pie{font-size:12px; color:var(--ink-3); font-weight:300; margin-top:3px}
 
 .duo{display:grid; grid-template-columns:1fr; gap:16px}
-@media (min-width:860px){.duo{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media (min-width:860px){
+  .duo{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .duo-dona{grid-template-columns:minmax(0,1.15fr) minmax(0,1fr)}
+}
 .panel{padding:16px}
 .panel h3{font-size:15px; margin-bottom:12px}
 
@@ -229,6 +232,10 @@ thead th.fija{z-index:3}
 .barra{height:7px; border-radius:4px; background:var(--line-soft); overflow:hidden; min-width:70px}
 .barra > i{display:block; height:100%; border-radius:4px}
 
+.lista-filas > div{padding:10px 0; border-bottom:1px solid var(--line-soft)}
+.lista-filas > div:last-child{border-bottom:none}
+.fila-cab{display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:13.5px}
+.fila-sub{font-size:12px; color:var(--ink-3); font-weight:300; margin-top:4px; padding-left:16px}
 .vacio{padding:26px 16px; text-align:center; color:var(--ink-3); font-size:14px}
 .vacio strong{display:block; color:var(--ink-2); font-weight:500; margin-bottom:4px}
 
@@ -1053,24 +1060,38 @@ function barraArribaRedondeada(x, y, w, h, r){
     ' Q'+(x+w)+' '+y+' '+(x+w)+' '+(y+r)+
     ' L'+(x+w)+' '+(y+h)+' Z';
 }
-function barrasAnio(anio){
-  const ing = [], sal = [];
-  for(let m=1; m<=12; m++){
-    const mt = metricas(anio, m);
+function ultimosMeses(anio, mes, cuantos){
+  // Los "cuantos" meses que terminan en (anio, mes), en orden cronológico,
+  // cruzando de diciembre a enero hacia atrás si hace falta.
+  const lista = [];
+  let a = anio, m = mes;
+  for(let i=0; i<cuantos; i++){
+    lista.unshift({anio:a, mes:m});
+    m--; if(m < 1){ m = 12; a--; }
+  }
+  return lista;
+}
+function barrasAnio(anio, mes){
+  const meses = ultimosMeses(anio, mes, 6);
+  const ing = [], sal = [], etiquetas = [];
+  meses.forEach(({anio:a, mes:m}) => {
+    const mt = metricas(a, m);
     ing.push(mt.t["Ingresos"]);
     sal.push(mt.gastos + mt.ahorroInv + mt.t["Deuda"]);
-  }
+    etiquetas.push(MES_CORTO[m-1] + (m === 1 ? " " + String(a).slice(2) : ""));
+  });
+  const n = meses.length;
   const max = Math.max(1, ...ing, ...sal);
-  const W = 560, H = 190, base = H - 26, pad = 10;
-  const paso = (W - pad*2) / 12, an = Math.min(11, paso/2 - 3);
+  const W = 420, H = 190, base = H - 26, pad = 14;
+  const paso = (W - pad*2) / n, an = Math.min(28, paso/2 - 6);
   let g = "";
-  const radio = Math.min(5, an/2);
-  for(let i=0; i<12; i++){
+  const radio = Math.min(6, an/2);
+  for(let i=0; i<n; i++){
     const x = pad + paso*i + paso/2;
     const hi = (ing[i]/max)*(base-14), hs = (sal[i]/max)*(base-14);
-    g += '<path d="'+barraArribaRedondeada(x-an-1.5, base-hi, an, hi, radio)+'" fill="var(--green)"><title>'+MES_CORTO[i]+': entra '+money(ing[i])+'</title></path>';
-    g += '<path d="'+barraArribaRedondeada(x+1.5, base-hs, an, hs, radio)+'" fill="var(--clay)"><title>'+MES_CORTO[i]+': sale '+money(sal[i])+'</title></path>';
-    g += '<text x="'+x+'" y="'+(H-8)+'" text-anchor="middle" font-size="10.5" font-family="Plus Jakarta Sans, system-ui, sans-serif" fill="var(--ink-3)">'+MES_CORTO[i]+'</text>';
+    g += '<path d="'+barraArribaRedondeada(x-an-2, base-hi, an, hi, radio)+'" fill="var(--green)"><title>'+etiquetas[i]+': entra '+money(ing[i])+'</title></path>';
+    g += '<path d="'+barraArribaRedondeada(x+2, base-hs, an, hs, radio)+'" fill="var(--clay)"><title>'+etiquetas[i]+': sale '+money(sal[i])+'</title></path>';
+    g += '<text x="'+x+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" font-family="Plus Jakarta Sans, system-ui, sans-serif" fill="var(--ink-3)">'+etiquetas[i]+'</text>';
   }
   g += '<line x1="'+pad+'" y1="'+base+'" x2="'+(W-pad)+'" y2="'+base+'" stroke="var(--line)" stroke-width="1"/>';
   return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Entradas y salidas por mes">'+g+'</svg>';
@@ -1139,7 +1160,7 @@ function vistaPanel(){
     ${kpi("Valor de inversiones", money(mt.valorInv), "según tu último corte")}
   </div>
 
-  <div class="seccion duo">
+  <div class="seccion duo duo-dona">
     <section class="tarjeta panel">
       <h3>A dónde se fue el dinero</h3>
       <div style="display:flex; justify-content:center; color:var(--ink); margin:4px 0 10px">${anillo(datos, 210)}</div>
@@ -1152,8 +1173,8 @@ function vistaPanel(){
     </section>
 
     <section class="tarjeta panel">
-      <h3>Entradas y salidas de ${a}</h3>
-      ${barrasAnio(a)}
+      <h3>Entradas y salidas · últimos 6 meses</h3>
+      ${barrasAnio(a, m)}
       <div class="leyenda">
         <span><i class="punto" style="background:var(--green)"></i>Entra</span>
         <span><i class="punto" style="background:var(--clay)"></i>Sale (incluye ahorro, deuda e inversión)</span>
@@ -1164,27 +1185,28 @@ function vistaPanel(){
   <div class="seccion duo">
     <section class="tarjeta panel">
       <h3>Próximos pagos</h3>
-      ${pagos.length ? `<div class="scroll-x"><table>
-        <thead><tr><th>Categoría</th><th>Día</th><th>Programado</th><th>Estado</th></tr></thead>
-        <tbody>${pagos.map(p => `<tr>
-          <td class="fija"><i class="punto" style="background:${COLOR[p.c.tipo]}"></i>${esc(p.c.nombre)}</td>
-          <td>${p.c.dia}</td>
-          <td>${money(p.programado)}</td>
-          <td><span class="pill ${p.est === "pagado" ? "ok" : p.est === "vencido" ? "mal" : ""}">${p.est === "pagado" ? "Pagado" : p.est === "vencido" ? "Vencido" : "Pendiente"}</span></td>
-        </tr>`).join("")}</tbody></table></div>`
+      ${pagos.length ? `<div class="lista-filas">${pagos.map(p => `<div>
+          <div class="fila-cab">
+            <span><i class="punto" style="background:${COLOR[p.c.tipo]}"></i>${esc(p.c.nombre)}</span>
+            <span class="pill ${p.est === "pagado" ? "ok" : p.est === "vencido" ? "mal" : ""}">${p.est === "pagado" ? "Pagado" : p.est === "vencido" ? "Vencido" : "Pendiente"}</span>
+          </div>
+          <div class="fila-sub">Día ${p.c.dia} · Programado ${money(p.programado)}</div>
+        </div>`).join("")}</div>`
         : `<div class="vacio"><strong>Sin fechas de vencimiento</strong>Escribe el día del mes en la columna “Día” de Categorías y tus gastos fijos y deudas aparecerán aquí.</div>`}
     </section>
 
     <section class="tarjeta panel">
       <h3>Categorías con más movimiento</h3>
-      ${topCats.length ? `<table><tbody>${topCats.map(x => {
+      ${topCats.length ? `<div class="lista-filas">${topCats.map(x => {
         const sobre = x.c.presupuesto > 0 && x.real > x.c.presupuesto;
-        return `<tr>
-          <td class="fija" style="max-width:190px">${esc(x.c.nombre)}</td>
-          <td style="width:45%"><div class="barra"><i style="width:${Math.min(100, x.real/topMax*100).toFixed(1)}%; background:${sobre ? "var(--clay)" : COLOR[x.c.tipo]}"></i></div></td>
-          <td>${money(x.real)}${x.c.presupuesto > 0 ? `<div class="tenue" style="font-size:11.5px">de ${moneyCorto(x.c.presupuesto)}</div>` : ""}</td>
-        </tr>`;
-      }).join("")}</tbody></table>`
+        return `<div>
+          <div class="fila-cab">
+            <span>${esc(x.c.nombre)}</span>
+            <span>${money(x.real)}${x.c.presupuesto > 0 ? ` <span class="tenue">de ${moneyCorto(x.c.presupuesto)}</span>` : ""}</span>
+          </div>
+          <div class="barra" style="margin-top:6px"><i style="width:${Math.min(100, x.real/topMax*100).toFixed(1)}%; background:${sobre ? "var(--clay)" : COLOR[x.c.tipo]}"></i></div>
+        </div>`;
+      }).join("")}</div>`
       : `<div class="vacio">Registra movimientos para ver el ranking del mes.</div>`}
     </section>
   </div>`;
