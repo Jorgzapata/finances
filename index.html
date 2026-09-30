@@ -529,7 +529,7 @@ async function descifrarBackup(texto, frase){
 /* ============ estado ============ */
 let estado = null;
 let vista = "panel";
-let filtros = { texto:"", tipo:"", soloMes:true };
+let filtros = { texto:"", tipo:"", cuenta:"", soloMes:true };
 let ocultarVacias = true;
 let editandoId = null;
 
@@ -912,9 +912,19 @@ function mostrarAcceso(mensaje){
   }
   ponerModo(false);
   caja.hidden = false;
+  // Sin esto, aunque la pantalla de acceso cubre todo visualmente, el
+  // contenido de la app detrás seguía pudiendo desplazarse (un "scroll
+  // fantasma") porque el overlay es position:fixed, no bloquea por sí solo
+  // el scroll del documento que queda debajo.
+  document.documentElement.style.overflow = "hidden";
+  document.body.style.overflow = "hidden";
   setTimeout(() => { const i = document.getElementById("acc-email"); if(i) i.focus(); }, 60);
 }
-function ocultarAcceso(){ document.getElementById("acceso").hidden = true; }
+function ocultarAcceso(){
+  document.getElementById("acceso").hidden = true;
+  document.documentElement.style.overflow = "";
+  document.body.style.overflow = "";
+}
 let modoRegistro = false;
 function ponerModo(registro){
   modoRegistro = registro;
@@ -1890,6 +1900,7 @@ function montarVistaEventos(){
       return;
     }
     if(t.id === "f-filtro-tipo"){ filtros.tipo = t.value; render(); return; }
+    if(t.id === "f-filtro-cuenta"){ filtros.cuenta = t.value; render(); return; }
     if(t.id === "f-solo-mes"){ filtros.soloMes = t.checked; render(); return; }
     if(t.id === "chk-vacias"){ ocultarVacias = t.checked; render(); return; }
   });
