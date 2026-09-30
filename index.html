@@ -20,11 +20,11 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#F2F0F8; --surface:#FFFFFF; --surface-2:#F7F5FC; --line:#E7E3F3; --line-soft:#EFEDF8;
-  --ink:#1E1B2E; --ink-2:#4B475E; --ink-3:#6E6A82;
-  --green:#0E7A4F; --clay:#C82F4A; --ocre:#9C5C0C; --azul:#2C68B8; --ciruela:#B23D76; --oliva:#6C4FD6;
-  --sel:#5E4DEE; --sel-soft:#EAE6FD;
-  --shadow:0 6px 20px rgba(70,60,120,.05), 0 1px 2px rgba(70,60,120,.03);
+  --bg:#F7F7F5; --surface:#FFFFFF; --surface-2:#F1F1EF; --line:#E4E4E1; --line-soft:#EDEDEB;
+  --ink:#062F28; --ink-2:#3E4D49; --ink-3:#7B7B7B;
+  --green:#3F8F4F; --clay:#B54A2C; --ocre:#9C7A1F; --azul:#2C6F8C; --ciruela:#A03A5C; --oliva:#6B5AA6;
+  --sel:#F7A81E; --sel-soft:#FDECD1; --sel-ink:#062F28; --acento:#9FE870;
+  --shadow:0 6px 20px rgba(6,47,40,.06), 0 1px 2px rgba(6,47,40,.04);
   --r:22px;
   color-scheme:light dark;
   box-sizing:border-box;
@@ -33,19 +33,19 @@
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#17152A; --surface:#211F38; --surface-2:#282542; --line:#37324F; --line-soft:#2D2A45;
-    --ink:#F1F0F8; --ink-2:#C7C3DA; --ink-3:#A6A1BE;
-    --green:#4BE39C; --clay:#FF8DA0; --ocre:#F7B466; --azul:#7FB3F5; --ciruela:#F39BC8; --oliva:#B3A2F7;
-    --sel:#A99CFC; --sel-soft:#332D57;
-    --shadow:0 6px 22px rgba(0,0,0,.28), 0 1px 3px rgba(0,0,0,.18);
+    --bg:#0A1F1B; --surface:#102B25; --surface-2:#15352D; --line:#234139; --line-soft:#1C362E;
+    --ink:#F3F8F0; --ink-2:#C9D6CD; --ink-3:#93A69C;
+    --green:#6FD97F; --clay:#E8825C; --ocre:#D9A93F; --azul:#5FA8C9; --ciruela:#D9789E; --oliva:#A38EE0;
+    --sel:#F7A81E; --sel-soft:#3D2B12; --sel-ink:#062F28; --acento:#9FE870;
+    --shadow:0 6px 22px rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.22);
   }
 }
 :root[data-theme="dark"]{
-  --bg:#17152A; --surface:#211F38; --surface-2:#282542; --line:#37324F; --line-soft:#2D2A45;
-  --ink:#F1F0F8; --ink-2:#C7C3DA; --ink-3:#A6A1BE;
-  --green:#4BE39C; --clay:#FF8DA0; --ocre:#F7B466; --azul:#7FB3F5; --ciruela:#F39BC8; --oliva:#B3A2F7;
-  --sel:#A99CFC; --sel-soft:#332D57;
-  --shadow:0 6px 22px rgba(0,0,0,.28), 0 1px 3px rgba(0,0,0,.18);
+  --bg:#0A1F1B; --surface:#102B25; --surface-2:#15352D; --line:#234139; --line-soft:#1C362E;
+  --ink:#F3F8F0; --ink-2:#C9D6CD; --ink-3:#93A69C;
+  --green:#6FD97F; --clay:#E8825C; --ocre:#D9A93F; --azul:#5FA8C9; --ciruela:#D9789E; --oliva:#A38EE0;
+  --sel:#F7A81E; --sel-soft:#3D2B12; --sel-ink:#062F28; --acento:#9FE870;
+  --shadow:0 6px 22px rgba(0,0,0,.35), 0 1px 3px rgba(0,0,0,.22);
 }
 *,*::before,*::after{box-sizing:inherit}
 html{-webkit-text-size-adjust:100%}
@@ -80,9 +80,18 @@ button,input,select,textarea{font:inherit; color:inherit}
     font-size:14px; font-weight:500; color:var(--ink-3); cursor:pointer;
   }
   .sidebar-nav button:hover{background:var(--surface-2); color:var(--ink)}
-  .sidebar-nav button[aria-current="true"]{background:var(--sel-soft); color:var(--sel); font-weight:700}
-  /* En escritorio la barra lateral reemplaza a las pestañas de arriba. */
-  nav.tabs{display:none}
+  .sidebar-nav button[aria-current="true"]{background:var(--sel-soft); color:var(--ink); font-weight:700; box-shadow:inset 3px 0 0 var(--sel)}
+  /* En escritorio la barra lateral reemplaza por completo al encabezado de
+     arriba (título, periodo, acciones y pestañas): ese encabezado queda
+     solo para la versión móvil. */
+  header.top{display:none}
+  .sidebar-pie{margin-top:auto; display:flex; flex-direction:column; gap:8px; padding:0 4px}
+  .sidebar-periodo{display:flex; gap:6px}
+  .sidebar-periodo select,.sidebar-periodo input{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:999px;
+    padding:7px 10px; font-size:13px; font-weight:500; width:50%; color:var(--ink);
+  }
+  #estado-guardado-lado{text-align:center; font-size:11.5px}
 }
 header.top{border-bottom:1px solid var(--line); background:var(--surface)}
 .top-in{max-width:1120px; margin:0 auto; padding:14px 16px 10px; display:flex; flex-wrap:wrap; gap:14px 20px; align-items:flex-end}
@@ -104,10 +113,8 @@ header.top{border-bottom:1px solid var(--line); background:var(--surface)}
 }
 .btn:hover{background:var(--line-soft)}
 .btn.primario{
-  background:var(--sel); border-color:var(--sel); color:#FFFFFF; font-weight:600;
+  background:var(--sel); border-color:var(--sel); color:var(--sel-ink); font-weight:700;
 }
-:root[data-theme="dark"] .btn.primario,:root:not([data-theme="light"]) .btn.primario{color:#181530}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .btn.primario{color:#FFFFFF}}
 .btn.primario:hover{filter:brightness(1.06)}
 .btn.chico{padding:5px 9px; font-size:13px}
 .btn.icono{padding:5px 8px; line-height:1}
@@ -125,7 +132,7 @@ nav.tabs button{
   background:none; border:0; border-radius:999px; padding:9px 16px;
   cursor:pointer; white-space:nowrap; color:var(--ink-3); font-size:14px; font-weight:500;
 }
-nav.tabs button[aria-current="true"]{color:var(--ink); background:var(--surface); font-weight:600; box-shadow:0 2px 6px rgba(70,60,120,.10)}
+nav.tabs button[aria-current="true"]{color:var(--ink); background:var(--surface); font-weight:600; box-shadow:0 2px 6px rgba(6,47,40,.10)}
 
 /* ---------- bloques ---------- */
 .tarjeta{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--shadow)}
@@ -135,12 +142,10 @@ nav.tabs button[aria-current="true"]{color:var(--ink); background:var(--surface)
 
 .hero{
   margin-top:20px; padding:28px 26px 26px; display:flex; flex-wrap:wrap; gap:20px 34px; align-items:flex-end;
-  background:linear-gradient(155deg, #6D5DF6, #5A4AE0 65%, #5140DC);
+  background:linear-gradient(155deg, #0C4A3D, #073A30 65%, #062F28);
   border:none; color:#FFFFFF;
   -webkit-backdrop-filter:blur(20px); backdrop-filter:blur(20px);
 }
-:root[data-theme="dark"] .hero,:root:not([data-theme="light"]) .hero{background:linear-gradient(155deg, #5847D6, #4636B8 65%, #3C2EA3)}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .hero{background:linear-gradient(155deg, #6D5DF6, #5A4AE0 65%, #5140DC)}}
 .hero .cifra{flex:1 1 260px}
 .hero .etq{font-size:13px; color:rgba(255,255,255,.88); font-weight:400}
 .hero .valor{font-size:clamp(38px,9vw,60px); line-height:1.02; letter-spacing:.02em; margin-top:6px; font-weight:800; color:#FFFFFF; font-variant-numeric:tabular-nums}
@@ -266,12 +271,10 @@ form.mov textarea{resize:vertical; min-height:56px}
 .fab{
   position:fixed; right:16px; bottom:calc(16px + env(safe-area-inset-bottom,0px));
   background:var(--sel);
-  color:#FFFFFF; border:0; border-radius:999px; padding:14px 20px;
-  font-size:15px; font-weight:600; cursor:pointer;
+  color:var(--sel-ink); border:0; border-radius:999px; padding:14px 20px;
+  font-size:15px; font-weight:700; cursor:pointer;
   box-shadow:0 8px 22px color-mix(in srgb, var(--sel) 35%, transparent); z-index:40;
 }
-:root[data-theme="dark"] .fab,:root:not([data-theme="light"]) .fab{color:#0F1412}
-@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .fab{color:#FBFDF9}}
 
 .estado{font-size:12px; color:var(--ink-3); white-space:nowrap}
 .menu{position:relative}
@@ -332,6 +335,18 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
   <aside class="sidebar">
     <div class="sidebar-marca">📒 <span>Finanzas</span></div>
     <nav class="sidebar-nav" id="tabs-lado"></nav>
+    <div class="sidebar-pie">
+      <button class="btn primario" id="btn-nuevo-lado" style="width:100%">+ Movimiento</button>
+      <div class="sidebar-periodo">
+        <select id="sel-mes-lado"></select>
+        <input id="sel-anio-lado" type="number" min="2000" max="2100" step="1">
+      </div>
+      <div class="menu" style="width:100%">
+        <button class="btn" id="btn-menu-lado" style="width:100%" aria-haspopup="true" aria-expanded="false">⚙ Datos</button>
+        <div class="menu-lista" id="menu-lista-lado" hidden style="left:0; right:auto"></div>
+      </div>
+      <span class="estado" id="estado-guardado-lado"></span>
+    </div>
   </aside>
   <div class="app-main">
     <header class="top">
@@ -636,7 +651,9 @@ let backend = "local";           // "claude" | "supabase" | "local"
 let db = null, dbDoc = null, sesion = null;
 let guardando = false, pendiente = false, temporizador = null, tocado = false;
 
-function setEstadoGuardado(txt){ const el = document.getElementById("estado-guardado"); if(el) el.textContent = txt; }
+function setEstadoGuardado(txt){
+  ["estado-guardado","estado-guardado-lado"].forEach(id => { const el = document.getElementById(id); if(el) el.textContent = txt; });
+}
 function leerJson(c){ try{ const s = localStorage.getItem(c); return s ? JSON.parse(s) : null; }catch(_){ return null; } }
 function escribirJson(c, v){ try{ v == null ? localStorage.removeItem(c) : localStorage.setItem(c, JSON.stringify(v)); }catch(_){} }
 function claveEstado(){
@@ -1071,29 +1088,69 @@ function ultimosMeses(anio, mes, cuantos){
   }
   return lista;
 }
+function suavizarPath(pts){
+  // Curva de Catmull-Rom convertida a Bézier: pasa exactamente por cada
+  // punto pero con un trazo continuo y curvo, no quiebres rectos.
+  if(pts.length < 2) return 'M'+pts[0].x+' '+pts[0].y;
+  let d = 'M'+pts[0].x.toFixed(1)+' '+pts[0].y.toFixed(1);
+  for(let i=0; i<pts.length-1; i++){
+    const p0 = pts[i-1] || pts[i], p1 = pts[i], p2 = pts[i+1], p3 = pts[i+2] || p2;
+    const c1x = p1.x + (p2.x-p0.x)/6, c1y = p1.y + (p2.y-p0.y)/6;
+    const c2x = p2.x - (p3.x-p1.x)/6, c2y = p2.y - (p3.y-p1.y)/6;
+    d += ' C'+c1x.toFixed(1)+' '+c1y.toFixed(1)+' '+c2x.toFixed(1)+' '+c2y.toFixed(1)+' '+p2.x.toFixed(1)+' '+p2.y.toFixed(1);
+  }
+  return d;
+}
 function barrasAnio(anio, mes){
-  const meses = ultimosMeses(anio, mes, 6);
+  const meses = ultimosMeses(anio, mes, 12);
   const ing = [], sal = [], etiquetas = [];
   meses.forEach(({anio:a, mes:m}) => {
     const mt = metricas(a, m);
     ing.push(mt.t["Ingresos"]);
     sal.push(mt.gastos + mt.ahorroInv + mt.t["Deuda"]);
-    etiquetas.push(MES_CORTO[m-1] + (m === 1 ? " " + String(a).slice(2) : ""));
+    etiquetas.push(MES_CORTO[m-1]);
   });
   const n = meses.length;
-  const max = Math.max(1, ...ing, ...sal);
-  const W = 420, H = 190, base = H - 26, pad = 14;
-  const paso = (W - pad*2) / n, an = Math.min(28, paso/2 - 6);
-  let g = "";
-  const radio = Math.min(6, an/2);
+  const max = Math.max(1, ...ing, ...sal, 1);
+  const W = 560, H = 230, padI = 8, padD = 8, top = 20, base = H - 28;
+  const pasoX = (W - padI - padD) / (n - 1);
+  const puntos = valores => valores.map((v,i) => ({x: padI + pasoX*i, y: base - (v/max)*(base-top)}));
+  const pIng = puntos(ing), pSal = puntos(sal);
+  const lineaIng = suavizarPath(pIng), lineaSal = suavizarPath(pSal);
+  const areaIng = lineaIng+' L'+pIng[n-1].x.toFixed(1)+' '+base+' L'+pIng[0].x.toFixed(1)+' '+base+' Z';
+
+  let g = '<defs><linearGradient id="gradEntra" x1="0" y1="0" x2="0" y2="1">'+
+    '<stop offset="0%" stop-color="var(--green)" stop-opacity="0.30"/>'+
+    '<stop offset="100%" stop-color="var(--green)" stop-opacity="0"/>'+
+    '</linearGradient></defs>';
+  g += '<path d="'+areaIng+'" fill="url(#gradEntra)"/>';
+  g += '<path d="'+lineaSal+'" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>';
+  g += '<path d="'+lineaIng+'" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>';
+
   for(let i=0; i<n; i++){
-    const x = pad + paso*i + paso/2;
-    const hi = (ing[i]/max)*(base-14), hs = (sal[i]/max)*(base-14);
-    g += '<path d="'+barraArribaRedondeada(x-an-2, base-hi, an, hi, radio)+'" fill="var(--green)"><title>'+etiquetas[i]+': entra '+money(ing[i])+'</title></path>';
-    g += '<path d="'+barraArribaRedondeada(x+2, base-hs, an, hs, radio)+'" fill="var(--clay)"><title>'+etiquetas[i]+': sale '+money(sal[i])+'</title></path>';
-    g += '<text x="'+x+'" y="'+(H-8)+'" text-anchor="middle" font-size="11" font-family="Plus Jakarta Sans, system-ui, sans-serif" fill="var(--ink-3)">'+etiquetas[i]+'</text>';
+    g += '<text x="'+pIng[i].x.toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="10" font-family="Plus Jakarta Sans, system-ui, sans-serif" fill="var(--ink-3)">'+etiquetas[i]+'</text>';
   }
-  g += '<line x1="'+pad+'" y1="'+base+'" x2="'+(W-pad)+'" y2="'+base+'" stroke="var(--line)" stroke-width="1"/>';
+
+  // Mes resaltado: el actual (el último punto), con línea guía punteada,
+  // un punto marcado y una tarjeta flotante con el cambio frente al mes
+  // anterior — igual al gesto del referente.
+  const iR = n-1, pR = pIng[iR];
+  g += '<line x1="'+pR.x.toFixed(1)+'" y1="'+top+'" x2="'+pR.x.toFixed(1)+'" y2="'+base+'" stroke="var(--ink-3)" stroke-width="1" stroke-dasharray="3,4" opacity="0.5"/>';
+  g += '<circle cx="'+pR.x.toFixed(1)+'" cy="'+pR.y.toFixed(1)+'" r="5" fill="var(--surface)" stroke="var(--green)" stroke-width="2.5"/>';
+
+  const prev = ing[iR-1];
+  const cambio = prev > 0 ? (ing[iR]-prev)/prev : null;
+  const sube = cambio == null || cambio >= 0;
+  const cajaAncho = 148, cajaAlto = 44;
+  let cajaX = pR.x - cajaAncho/2;
+  cajaX = Math.max(padI, Math.min(W-padD-cajaAncho, cajaX));
+  const cajaY = Math.max(2, pR.y - cajaAlto - 12);
+  g += '<g>'+
+    '<rect x="'+cajaX.toFixed(1)+'" y="'+cajaY.toFixed(1)+'" width="'+cajaAncho+'" height="'+cajaAlto+'" rx="12" fill="var(--ink)"/>'+
+    '<text x="'+(cajaX+12).toFixed(1)+'" y="'+(cajaY+18).toFixed(1)+'" font-size="12" font-weight="700" fill="var(--surface)" font-family="Plus Jakarta Sans, system-ui, sans-serif">'+moneyCorto(ing[iR])+
+      '<tspan fill="'+(sube?"#9FE870":"#FF9E9E")+'" font-size="10.5" font-weight="700"> '+(sube?"▲":"▼")+(cambio==null?"":" "+Math.abs(Math.round(cambio*100))+"%")+'</tspan></text>'+
+    (prev != null ? '<text x="'+(cajaX+12).toFixed(1)+'" y="'+(cajaY+34).toFixed(1)+'" font-size="10" font-weight="300" fill="var(--surface)" opacity="0.75" font-family="Plus Jakarta Sans, system-ui, sans-serif">vs '+moneyCorto(prev)+' el mes anterior</text>' : '')+
+    '</g>';
   return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="'+H+'" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Entradas y salidas por mes">'+g+'</svg>';
 }
 
@@ -1173,11 +1230,11 @@ function vistaPanel(){
     </section>
 
     <section class="tarjeta panel">
-      <h3>Entradas y salidas · últimos 6 meses</h3>
+      <h3>Entradas y salidas · últimos 12 meses</h3>
       ${barrasAnio(a, m)}
       <div class="leyenda">
         <span><i class="punto" style="background:var(--green)"></i>Entra</span>
-        <span><i class="punto" style="background:var(--clay)"></i>Sale (incluye ahorro, deuda e inversión)</span>
+        <span><i class="punto" style="background:var(--ink); opacity:.55"></i>Sale (incluye ahorro, deuda e inversión)</span>
       </div>
     </section>
   </div>
@@ -1600,9 +1657,8 @@ function render(){
   window.scrollTo(0, y);
 }
 function sincronizarControles(){
-  const sm = document.getElementById("sel-mes"), sa = document.getElementById("sel-anio");
-  if(sm) sm.value = String(estado.mes);
-  if(sa) sa.value = String(estado.anio);
+  ["sel-mes","sel-mes-lado"].forEach(id => { const el = document.getElementById(id); if(el) el.value = String(estado.mes); });
+  ["sel-anio","sel-anio-lado"].forEach(id => { const el = document.getElementById(id); if(el) el.value = String(estado.anio); });
 }
 
 /* ============ eventos ============ */
@@ -1622,11 +1678,18 @@ function montarTabs(){
   lado.addEventListener("click", irA);
 }
 function montarPeriodo(){
-  const sm = document.getElementById("sel-mes");
-  sm.innerHTML = MESES.map((n,i) => `<option value="${i+1}">${n}</option>`).join("");
-  sm.addEventListener("change", () => { estado.mes = +sm.value; marcar(); render(); });
-  const sa = document.getElementById("sel-anio");
-  sa.addEventListener("change", () => { estado.anio = +sa.value || estado.anio; marcar(); render(); });
+  const opciones = MESES.map((n,i) => `<option value="${i+1}">${n}</option>`).join("");
+  ["sel-mes","sel-mes-lado"].forEach(id => {
+    const sm = document.getElementById(id);
+    if(!sm) return;
+    sm.innerHTML = opciones;
+    sm.addEventListener("change", () => { estado.mes = +sm.value; marcar(); sincronizarControles(); render(); });
+  });
+  ["sel-anio","sel-anio-lado"].forEach(id => {
+    const sa = document.getElementById(id);
+    if(!sa) return;
+    sa.addEventListener("change", () => { estado.anio = +sa.value || estado.anio; marcar(); sincronizarControles(); render(); });
+  });
 }
 
 const dlg = document.getElementById("dlg-mov");
@@ -1887,8 +1950,7 @@ function mostrarTexto(titulo, sub, contenido, importar, modo){
   d.showModal();
 }
 function montarMenu(){
-  const btn = document.getElementById("btn-menu"), lista = document.getElementById("menu-lista");
-  function pintarMenu(){
+  function pintarMenu(lista){
     const enClaude = !!(window.claude && typeof window.claude.use === "function");
     let cuenta = "";
     if(!enClaude){
@@ -1908,16 +1970,27 @@ function montarMenu(){
       <button data-acc="tema">Cambiar a tema oscuro/claro</button>
       <button data-acc="reset" class="peligro" style="color:var(--clay)">Empezar de cero</button>`;
   }
-  btn.addEventListener("click", () => {
-    const abierto = !lista.hidden;
-    if(!abierto) pintarMenu();
-    lista.hidden = abierto;
-    btn.setAttribute("aria-expanded", String(!abierto));
-  });
-  document.addEventListener("click", e => {
-    if(!e.target.closest(".menu")){ lista.hidden = true; btn.setAttribute("aria-expanded","false"); }
-  });
-  lista.addEventListener("click", async e => {
+  // Un mismo menú puede abrirse desde dos disparadores (móvil y barra
+  // lateral); cada uno tiene su propio botón y lista, pero comparten toda
+  // la lógica de qué hacer con cada opción.
+  function conectarDisparador(idBtn, idLista){
+    const btn = document.getElementById(idBtn), lista = document.getElementById(idLista);
+    if(!btn || !lista) return;
+    btn.addEventListener("click", () => {
+      const abierto = !lista.hidden;
+      if(!abierto) pintarMenu(lista);
+      lista.hidden = abierto;
+      btn.setAttribute("aria-expanded", String(!abierto));
+    });
+    document.addEventListener("click", e => {
+      if(!e.target.closest(".menu")){ lista.hidden = true; btn.setAttribute("aria-expanded","false"); }
+    });
+    lista.addEventListener("click", e => manejarAccionMenu(e, btn, lista));
+  }
+  conectarDisparador("btn-menu", "menu-lista");
+  conectarDisparador("btn-menu-lado", "menu-lista-lado");
+
+  async function manejarAccionMenu(e, btn, lista){
     const b = e.target.closest("button[data-acc]");
     if(!b) return;
     lista.hidden = true; btn.setAttribute("aria-expanded","false");
@@ -1953,7 +2026,7 @@ function montarMenu(){
       estado = semillaEstado();
       marcar(); sincronizarControles(); render();
     }
-  });
+  }
 
   document.getElementById("texto-cerrar").addEventListener("click", () => document.getElementById("dlg-texto").close());
   document.getElementById("texto-copiar").addEventListener("click", async () => {
@@ -2031,6 +2104,7 @@ function arrancar(){
   setEstadoGuardado("");
   render();
   document.getElementById("btn-nuevo").addEventListener("click", () => abrirMov(null));
+  document.getElementById("btn-nuevo-lado").addEventListener("click", () => abrirMov(null));
   document.getElementById("fab").addEventListener("click", () => abrirMov(null));
   iniciarSync();
 }
