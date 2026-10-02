@@ -22,7 +22,7 @@
 :root{
   --bg:#F7F7F5; --surface:#FFFFFF; --surface-2:#F1F1EF; --line:#E4E4E1; --line-soft:#EDEDEB;
   --ink:#062F28; --ink-2:#3E4D49; --ink-3:#7B7B7B;
-  --green:#3F8F4F; --clay:#B54A2C; --ocre:#9C7A1F; --azul:#2C6F8C; --ciruela:#A03A5C; --oliva:#6B5AA6;
+  --green:#3F8F4F; --clay:#B54A2C; --ocre:#8A6B18; --azul:#2C6F8C; --ciruela:#A03A5C; --oliva:#6B5AA6;
   --sel:#F7A81E; --sel-soft:#FDECD1; --sel-ink:#062F28; --acento:#9FE870;
   --shadow:0 6px 20px rgba(6,47,40,.06), 0 1px 2px rgba(6,47,40,.04);
   --r:22px;
@@ -233,6 +233,12 @@ thead th.fija{z-index:3}
 .pill.ok{color:var(--green); border-color:color-mix(in srgb,var(--green) 40%,transparent)}
 .pill.mal{color:var(--clay); border-color:color-mix(in srgb,var(--clay) 40%,transparent)}
 .punto{display:inline-block; width:9px; height:9px; border-radius:5px; margin-right:7px; vertical-align:baseline}
+.chip-pct{
+  display:inline-flex; align-items:center; justify-content:center; min-width:44px;
+  padding:3px 9px; border-radius:999px; font-size:12px; font-weight:700; color:#FFFFFF;
+}
+:root[data-theme="dark"] .chip-pct,:root:not([data-theme="light"]) .chip-pct{color:var(--sel-ink)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .chip-pct{color:#FFFFFF}}
 
 .barra{height:7px; border-radius:4px; background:var(--line-soft); overflow:hidden; min-width:70px}
 .barra > i{display:block; height:100%; border-radius:4px}
@@ -447,6 +453,23 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
   <div class="dlg-cab"><h3 class="serif">Copias automáticas</h3><p class="sub">Se guarda sola, como mucho una vez al día, para poder volver atrás si algo sale mal. Restaurar reemplaza lo que tienes ahora.</p></div>
   <div id="historial-lista" style="padding:0 18px 18px; max-height:360px; overflow-y:auto; display:flex; flex-direction:column; gap:8px"></div>
   <div class="dlg-pie" style="padding:0 18px 18px"><button class="btn" id="historial-cerrar">Cerrar</button></div>
+</dialog>
+
+<dialog id="dlg-confirmar-borrado">
+  <div class="dlg-cab"><h3 class="serif">¿Borrar todo?</h3>
+    <p class="sub">Se borran todos tus movimientos, cuentas y transferencias, y se restauran las categorías originales. No se puede deshacer.</p>
+  </div>
+  <form method="dialog" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:10px">
+    <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-3)">
+      Para continuar, escribe la palabra <strong>confirmar</strong>
+      <input type="text" id="confirmar-borrado-texto" autocomplete="off" spellcheck="false"
+        style="background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:9px 12px; font-size:14px; color:var(--ink)">
+    </label>
+    <div class="dlg-pie" style="padding:0">
+      <button type="button" class="btn" id="confirmar-borrado-cancelar">Cancelar</button>
+      <button type="submit" class="btn peligro" id="confirmar-borrado-aceptar" disabled style="opacity:.5">Borrar todo</button>
+    </div>
+  </form>
 </dialog>
 
 <script>
@@ -1232,9 +1255,10 @@ function vistaPanel(){
       <h3>A dónde se fue el dinero</h3>
       <div style="display:flex; justify-content:center; color:var(--ink); margin:4px 0 10px">${anillo(datos, 210)}</div>
       <div>
-        ${datos.map(d => `<div style="display:flex; justify-content:space-between; gap:12px; padding:7px 0; font-size:13.5px; border-top:1px solid var(--line-soft)">
-          <span><i class="punto" style="background:${d.color}"></i>${esc(d.etq)}</span>
-          <span>${money(d.valor)} <span class="tenue">${totalSalidas ? pct(d.valor/totalSalidas, 0) : ""}</span></span>
+        ${datos.map(d => `<div style="display:grid; grid-template-columns:auto 1fr auto; align-items:center; gap:12px; padding:8px 0; font-size:13.5px; border-top:1px solid var(--line-soft)">
+          <span class="chip-pct" style="background:${d.color}">${totalSalidas ? pct(d.valor/totalSalidas, 0) : "0%"}</span>
+          <span>${esc(d.etq)}</span>
+          <span style="font-weight:600; text-align:right">${money(d.valor)}</span>
         </div>`).join("")}
       </div>
     </section>
@@ -1688,7 +1712,7 @@ function montarTabs(){
   lado.addEventListener("click", irA);
 }
 function montarPeriodo(){
-  const opciones = MESES.map((n,i) => `<option value="${i+1}">${n}</option>`).join("");
+  const opciones = MES_CORTO.map((n,i) => `<option value="${i+1}">${n}</option>`).join("");
   ["sel-mes","sel-mes-lado"].forEach(id => {
     const sm = document.getElementById(id);
     if(!sm) return;
@@ -1960,6 +1984,33 @@ function mostrarTexto(titulo, sub, contenido, importar, modo){
   document.getElementById("texto-aplicar").hidden = !importar;
   d.showModal();
 }
+function abrirConfirmarBorrado(){
+  const dlg = document.getElementById("dlg-confirmar-borrado");
+  const input = document.getElementById("confirmar-borrado-texto");
+  const btnAceptar = document.getElementById("confirmar-borrado-aceptar");
+  input.value = "";
+  btnAceptar.disabled = true; btnAceptar.style.opacity = ".5";
+  dlg.showModal();
+  setTimeout(() => input.focus(), 50);
+}
+function montarConfirmarBorrado(){
+  const dlg = document.getElementById("dlg-confirmar-borrado");
+  const input = document.getElementById("confirmar-borrado-texto");
+  const btnAceptar = document.getElementById("confirmar-borrado-aceptar");
+  const escribioConfirmar = () => input.value.trim().toLowerCase() === "confirmar";
+  input.addEventListener("input", () => {
+    btnAceptar.disabled = !escribioConfirmar();
+    btnAceptar.style.opacity = escribioConfirmar() ? "1" : ".5";
+  });
+  document.getElementById("confirmar-borrado-cancelar").addEventListener("click", () => dlg.close());
+  dlg.querySelector("form").addEventListener("submit", e => {
+    e.preventDefault();
+    if(!escribioConfirmar()) return; // red de seguridad extra: nunca borra sin la palabra exacta
+    estado = semillaEstado();
+    marcar(); sincronizarControles(); render();
+    dlg.close();
+  });
+}
 function montarMenu(){
   function pintarMenu(lista){
     const enClaude = !!(window.claude && typeof window.claude.use === "function");
@@ -2033,9 +2084,7 @@ function montarMenu(){
       try{ localStorage.setItem(CLAVE_LOCAL + ":tema", oscuroAhora ? "light" : "dark"); }catch(_){}
     }
     if(acc === "reset"){
-      if(!confirm("Se borran todos los movimientos y se restauran las categorías originales. ¿Continuar?")) return;
-      estado = semillaEstado();
-      marcar(); sincronizarControles(); render();
+      abrirConfirmarBorrado();
     }
   }
 
@@ -2110,7 +2159,7 @@ function arrancar(){
   sesion = leerJson(CLAVE_SESION); // se lee antes de la caché para que claveEstado() ya sepa de quién es
   const local = leerLocal();
   estado = local ? sanear(local) : semillaEstado();
-  montarTabs(); montarPeriodo(); montarDialogo(); montarTransferencia(); montarVistaEventos(); montarMenu(); montarAcceso(); montarInactividad(); montarHistorial();
+  montarTabs(); montarPeriodo(); montarDialogo(); montarTransferencia(); montarVistaEventos(); montarMenu(); montarAcceso(); montarInactividad(); montarHistorial(); montarConfirmarBorrado();
   sincronizarControles();
   setEstadoGuardado("");
   render();
