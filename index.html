@@ -283,14 +283,10 @@ form.mov textarea{resize:vertical; min-height:56px}
 }
 
 .estado{font-size:12px; color:var(--ink-3); white-space:nowrap}
-.menu{position:relative}
-.menu-lista{
-  position:absolute; right:0; top:calc(100% + 6px); background:var(--surface); border:1px solid var(--line);
-  border-radius:18px; box-shadow:0 12px 30px rgba(0,0,0,.18); padding:6px; min-width:216px; z-index:50;
-}
-.menu-lista button{display:block; width:100%; text-align:left; background:none; border:0; padding:8px 10px; border-radius:12px; cursor:pointer; font-size:14px}
-.menu-lista button:hover{background:var(--surface-2)}
-.menu-lista hr{border:0; border-top:1px solid var(--line-soft); margin:5px 2px}
+.config-seccion{display:flex; flex-direction:column; gap:8px; padding-top:16px; border-top:1px solid var(--line-soft)}
+.config-seccion:first-child{padding-top:0; border-top:0}
+.config-seccion h4{font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-3); margin:0}
+.config-seccion button[data-acc]{width:100%; justify-content:flex-start; text-align:left}
 .leyenda{display:flex; flex-wrap:wrap; gap:6px 16px; margin-top:12px; font-size:13px; color:var(--ink-2)}
 .leyenda span b{font-weight:500; color:var(--ink)}
 .nota{font-size:12.5px; color:var(--ink-3); margin-top:10px}
@@ -347,10 +343,7 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
         <select id="sel-mes-lado"></select>
         <input id="sel-anio-lado" type="number" min="2000" max="2100" step="1">
       </div>
-      <div class="menu" style="width:100%">
-        <button class="btn" id="btn-menu-lado" style="width:100%" aria-haspopup="true" aria-expanded="false">⚙ Datos</button>
-        <div class="menu-lista" id="menu-lista-lado" hidden style="left:0; right:auto"></div>
-      </div>
+      <button class="btn" id="btn-menu-lado" style="width:100%">⚙ Configuración</button>
       <span class="estado" id="estado-guardado-lado"></span>
     </div>
   </aside>
@@ -373,10 +366,7 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
         </div>
         <div class="acciones">
           <span class="estado" id="estado-guardado"></span>
-          <div class="menu">
-            <button class="btn" id="btn-menu" aria-haspopup="true" aria-expanded="false">Datos</button>
-            <div class="menu-lista" id="menu-lista" hidden></div>
-          </div>
+          <button class="btn" id="btn-menu">⚙ Configuración</button>
           <button class="btn primario" id="btn-nuevo">Registrar movimiento</button>
         </div>
       </div>
@@ -453,6 +443,12 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
   <div class="dlg-cab"><h3 class="serif">Copias automáticas</h3><p class="sub">Se guarda sola, como mucho una vez al día, para poder volver atrás si algo sale mal. Restaurar reemplaza lo que tienes ahora.</p></div>
   <div id="historial-lista" style="padding:0 18px 18px; max-height:360px; overflow-y:auto; display:flex; flex-direction:column; gap:8px"></div>
   <div class="dlg-pie" style="padding:0 18px 18px"><button class="btn" id="historial-cerrar">Cerrar</button></div>
+</dialog>
+
+<dialog id="dlg-config">
+  <div class="dlg-cab"><h3 class="serif">Configuración</h3></div>
+  <div id="config-contenido" style="padding:4px 18px 18px; max-height:min(72vh,560px); overflow-y:auto; display:flex; flex-direction:column; gap:20px"></div>
+  <div class="dlg-pie" style="padding:0 18px 18px"><button class="btn" id="config-cerrar">Cerrar</button></div>
 </dialog>
 
 <dialog id="dlg-confirmar-borrado">
@@ -2012,50 +2008,54 @@ function montarConfirmarBorrado(){
   });
 }
 function montarMenu(){
-  function pintarMenu(lista){
-    const enClaude = !!(window.claude && typeof window.claude.use === "function");
-    let cuenta = "";
-    if(!enClaude){
-      cuenta = backend === "supabase"
-        ? `<hr><button data-acc="salir">Cerrar sesión${sesion && sesion.email ? " (" + esc(sesion.email) + ")" : ""}</button>`
-        : `<hr><button data-acc="entrar">Activar sincronización en la nube</button>`;
-    }
-    lista.innerHTML = `
-      <button data-acc="csv">Exportar movimientos (CSV)</button>
-      <button data-acc="json">Exportar copia de seguridad (JSON)</button>
-      <button data-acc="importar">Importar copia de seguridad</button>
-      <button data-acc="cifrado-exportar">Descargar copia cifrada</button>
-      <button data-acc="cifrado-importar">Restaurar copia cifrada</button>
-      ${backend === "supabase" ? `<button data-acc="historial">Ver copias automáticas</button>` : ""}
-      ${cuenta}
-      <hr>
-      <button data-acc="tema">Cambiar a tema oscuro/claro</button>
-      <button data-acc="reset" class="peligro" style="color:var(--clay)">Empezar de cero</button>`;
-  }
-  // Un mismo menú puede abrirse desde dos disparadores (móvil y barra
-  // lateral); cada uno tiene su propio botón y lista, pero comparten toda
-  // la lógica de qué hacer con cada opción.
-  function conectarDisparador(idBtn, idLista){
-    const btn = document.getElementById(idBtn), lista = document.getElementById(idLista);
-    if(!btn || !lista) return;
-    btn.addEventListener("click", () => {
-      const abierto = !lista.hidden;
-      if(!abierto) pintarMenu(lista);
-      lista.hidden = abierto;
-      btn.setAttribute("aria-expanded", String(!abierto));
-    });
-    document.addEventListener("click", e => {
-      if(!e.target.closest(".menu")){ lista.hidden = true; btn.setAttribute("aria-expanded","false"); }
-    });
-    lista.addEventListener("click", e => manejarAccionMenu(e, btn, lista));
-  }
-  conectarDisparador("btn-menu", "menu-lista");
-  conectarDisparador("btn-menu-lado", "menu-lista-lado");
+  const dlg = document.getElementById("dlg-config");
+  const contenedor = document.getElementById("config-contenido");
 
-  async function manejarAccionMenu(e, btn, lista){
+  function pintarConfig(){
+    const enClaude = !!(window.claude && typeof window.claude.use === "function");
+    let seccionCuenta = "";
+    if(!enClaude){
+      seccionCuenta = `<div class="config-seccion">
+        <h4>Cuenta</h4>
+        ${backend === "supabase"
+          ? `<p class="tenue" style="margin:0 0 8px">${sesion && sesion.email ? esc(sesion.email) : ""}</p><button data-acc="salir" style="width:100%">Cerrar sesión</button>`
+          : `<button data-acc="entrar" style="width:100%">Activar sincronización en la nube</button>`}
+      </div>`;
+    }
+    contenedor.innerHTML = `
+      <div class="config-seccion">
+        <h4>Exportar e importar</h4>
+        <button data-acc="csv">Exportar movimientos (CSV)</button>
+        <button data-acc="json">Exportar copia de seguridad (JSON)</button>
+        <button data-acc="importar">Importar copia de seguridad</button>
+        <button data-acc="cifrado-exportar">Descargar copia cifrada</button>
+        <button data-acc="cifrado-importar">Restaurar copia cifrada</button>
+      </div>
+      ${backend === "supabase" ? `<div class="config-seccion">
+        <h4>Copias automáticas</h4>
+        <button data-acc="historial" style="width:100%">Ver copias automáticas</button>
+      </div>` : ""}
+      ${seccionCuenta}
+      <div class="config-seccion">
+        <h4>Apariencia</h4>
+        <button data-acc="tema" style="width:100%">Cambiar a tema oscuro/claro</button>
+      </div>
+      <div class="config-seccion">
+        <h4 style="color:var(--clay)">Zona de peligro</h4>
+        <button data-acc="reset" class="peligro" style="width:100%">Empezar de cero</button>
+      </div>`;
+  }
+  function abrirConfig(){ pintarConfig(); dlg.showModal(); }
+  const btnMenu = document.getElementById("btn-menu"), btnMenuLado = document.getElementById("btn-menu-lado");
+  if(btnMenu) btnMenu.addEventListener("click", abrirConfig);
+  if(btnMenuLado) btnMenuLado.addEventListener("click", abrirConfig);
+  document.getElementById("config-cerrar").addEventListener("click", () => dlg.close());
+  contenedor.addEventListener("click", e => manejarAccionMenu(e));
+
+  async function manejarAccionMenu(e){
     const b = e.target.closest("button[data-acc]");
     if(!b) return;
-    lista.hidden = true; btn.setAttribute("aria-expanded","false");
+    dlg.close();
     const acc = b.dataset.acc;
     if(acc === "csv") await descargar("movimientos-" + estado.anio + ".csv", csvMovimientos(), "Movimientos en CSV", "Copia el texto y pégalo en un archivo .csv o en tu hoja de cálculo.");
     if(acc === "json") await descargar("finanzas-" + estado.anio + ".json", JSON.stringify(estado, null, 2), "Copia de seguridad", "Guarda este texto en un archivo .json para restaurarlo más adelante.");
