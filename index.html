@@ -317,7 +317,7 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
     <p class="sub" id="acc-sub">Entra con tu correo y contraseña para que tus datos te sigan en el celular y en el computador. Cada persona tiene su propio inicio de sesión y ve solo su propia información.</p>
     <form id="form-acceso">
       <label>Correo<input type="email" id="acc-email" autocomplete="username" required></label>
-      <label>Contraseña<input type="password" id="acc-clave" autocomplete="current-password" minlength="6" required></label>
+      <label>Contraseña<input type="password" id="acc-clave" autocomplete="current-password" minlength="6" inputmode="numeric" required></label>
       <details id="acceso-config">
         <summary>Datos de mi proyecto de Supabase</summary>
         <label>URL del proyecto<input type="url" id="acc-url" placeholder="https://xxxxxxxx.supabase.co"></label>
@@ -327,6 +327,7 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
       <p class="acc-error" id="acceso-error" hidden></p>
       <p class="acc-ok" id="acceso-ok" hidden></p>
       <button type="submit" class="btn primario" id="acc-entrar" style="width:100%; margin-top:4px">Entrar</button>
+      <button type="button" id="acc-olvide" style="width:100%; margin-top:2px; background:none; border:0; color:var(--ink-3); font-size:12.5px; padding:6px; cursor:pointer">¿Olvidaste tu contraseña?</button>
     </form>
     <button class="btn" id="acc-alternar" style="width:100%; margin-top:8px">Soy nuevo aquí · crear mi cuenta</button>
     <button class="btn" id="acc-local" style="width:100%; margin-top:8px">Usar solo en este dispositivo</button>
@@ -443,6 +444,26 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
   <div class="dlg-cab"><h3 class="serif">Copias automáticas</h3><p class="sub">Se guarda sola, como mucho una vez al día, para poder volver atrás si algo sale mal. Restaurar reemplaza lo que tienes ahora.</p></div>
   <div id="historial-lista" style="padding:0 18px 18px; max-height:360px; overflow-y:auto; display:flex; flex-direction:column; gap:8px"></div>
   <div class="dlg-pie" style="padding:0 18px 18px"><button class="btn" id="historial-cerrar">Cerrar</button></div>
+</dialog>
+
+<dialog id="dlg-clave">
+  <div class="dlg-cab"><h3 class="serif" id="clave-titulo">Cambiar contraseña</h3><p class="sub" id="clave-sub">Elige una contraseña nueva. Nadie más la verá.</p></div>
+  <form id="form-clave" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:10px">
+    <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-3)">Nueva contraseña
+      <input type="password" id="clave-nueva" inputmode="numeric" minlength="6" autocomplete="new-password" required
+        style="background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:9px 12px; font-size:14px; color:var(--ink)">
+    </label>
+    <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-3)">Repite la contraseña
+      <input type="password" id="clave-repetir" inputmode="numeric" minlength="6" autocomplete="new-password" required
+        style="background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:9px 12px; font-size:14px; color:var(--ink)">
+    </label>
+    <p class="acc-error" id="clave-error" hidden></p>
+    <p class="acc-ok" id="clave-ok" hidden></p>
+    <div class="dlg-pie" style="padding:0">
+      <button type="button" class="btn" id="clave-cancelar">Cancelar</button>
+      <button type="submit" class="btn primario" id="clave-guardar">Guardar</button>
+    </div>
+  </form>
 </dialog>
 
 <dialog id="dlg-config">
@@ -734,6 +755,97 @@ async function registrar(email, clave){
   if(r && r.access_token) return guardarSesion(r);
   return null;
 }
+async function pedirRecuperacion(email){
+  // redirect_to: a donde debe volver el enlace del correo. Se usa la
+  // propia URL donde esté corriendo la app ahora mismo (GitHub Pages, el
+  // enlace de Claude, o donde sea), sin necesidad de escribirla a mano.
+  const destino = location.origin + location.pathname;
+  await nubeFetch("/auth/v1/recover", {method:"POST", body: JSON.stringify({email: email, redirect_to: destino})}, false);
+}
+async function cambiarClave(nuevaClave){
+  await nubeFetch("/auth/v1/user", {method:"PUT", body: JSON.stringify({password: nuevaClave})}, true);
+}
+async function revisarRecuperacion(){
+  // Cuando alguien toca el enlace del correo de recuperación, Supabase lo
+  // trae de vuelta a esta misma página con un token en el fragmento de la
+  // URL (después del #), no en la ruta normal. Si eso está presente, se
+  // arma una sesión temporal con ese token para poder fijar la nueva
+  // contraseña, en vez de mostrar el formulario de entrar normal.
+  let hash = "";
+  try{ hash = location.hash || ""; }catch(_){ return false; }
+  if(!hash.includes("type=recovery")) return false;
+  const params = new URLSearchParams(hash.slice(1));
+  const token = params.get("access_token");
+  if(!token) return false;
+  try{ history.replaceState(null, "", location.pathname + location.search); }catch(_){}
+  if(!confNube()) return false;
+  sesion = {
+    access_token: token, refresh_token: params.get("refresh_token") || "",
+    expira: Date.now() + (Number(params.get("expires_in")) || 3600) * 1000,
+    uid: null, email: null
+  };
+  try{
+    const perfil = await nubeFetch("/auth/v1/user", {method:"GET"}, true);
+    sesion.uid = perfil.id; sesion.email = perfil.email;
+    escribirJson(CLAVE_SESION, sesion);
+    backend = "supabase";
+    abrirCambiarClave(true);
+    return true;
+  }catch(_){
+    sesion = null;
+    return false;
+  }
+}
+let modoClaveRecuperacion = false;
+function abrirCambiarClave(modoRecuperacion){
+  modoClaveRecuperacion = !!modoRecuperacion;
+  const dlg = document.getElementById("dlg-clave");
+  document.getElementById("clave-titulo").textContent = modoClaveRecuperacion ? "Elige tu nueva contraseña" : "Cambiar contraseña";
+  document.getElementById("clave-sub").textContent = modoClaveRecuperacion
+    ? "Veniste desde el enlace de recuperación. Escribe una contraseña nueva para volver a entrar."
+    : "Elige una contraseña nueva. Nadie más la verá.";
+  document.getElementById("clave-cancelar").textContent = modoClaveRecuperacion ? "Prefiero intentarlo después" : "Cancelar";
+  document.getElementById("clave-nueva").value = "";
+  document.getElementById("clave-repetir").value = "";
+  document.getElementById("clave-error").hidden = true;
+  document.getElementById("clave-ok").hidden = true;
+  dlg.showModal();
+  setTimeout(() => { const i = document.getElementById("clave-nueva"); if(i) i.focus(); }, 60);
+}
+function montarCambiarClave(){
+  const dlg = document.getElementById("dlg-clave");
+  document.getElementById("clave-cancelar").addEventListener("click", () => {
+    dlg.close();
+    if(modoClaveRecuperacion){ salirSesion(); backend = "local"; mostrarAcceso(""); }
+  });
+  document.getElementById("form-clave").addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = document.getElementById("clave-error"), ok = document.getElementById("clave-ok");
+    const btn = document.getElementById("clave-guardar");
+    err.hidden = true; ok.hidden = true;
+    const n1 = document.getElementById("clave-nueva").value, n2 = document.getElementById("clave-repetir").value;
+    if(n1.length < 6){ err.textContent = "La contraseña necesita al menos 6 caracteres."; err.hidden = false; return; }
+    if(n1 !== n2){ err.textContent = "Las dos contraseñas no coinciden."; err.hidden = false; return; }
+    btn.disabled = true; btn.textContent = "Guardando…";
+    try{
+      await cambiarClave(n1);
+      ok.textContent = modoClaveRecuperacion ? "Contraseña actualizada. Entrando…" : "Contraseña actualizada.";
+      ok.hidden = false;
+      setTimeout(async () => {
+        dlg.close();
+        if(modoClaveRecuperacion){
+          setEstadoGuardado("Sincronizando…");
+          try{ await adoptarRemoto(nubeCargar); }catch(_){ setEstadoGuardado("Sin conexión · guardado aquí"); }
+        }
+      }, 900);
+    }catch(ex){
+      err.textContent = "No se pudo guardar: " + (ex && ex.message || "intenta de nuevo");
+      err.hidden = false;
+    }finally{
+      btn.disabled = false; btn.textContent = "Guardar";
+    }
+  });
+}
 async function refrescar(){
   if(!sesion || !sesion.refresh_token) return null;
   try{
@@ -970,6 +1082,22 @@ function empezarComo(nuevaSesion){
 }
 function montarAcceso(){
   document.getElementById("acc-alternar").addEventListener("click", () => ponerModo(!modoRegistro));
+  document.getElementById("acc-olvide").addEventListener("click", async () => {
+    const err = document.getElementById("acceso-error"), ok = document.getElementById("acceso-ok");
+    const email = document.getElementById("acc-email").value.trim();
+    err.hidden = true; ok.hidden = true;
+    if(!confNube()){ err.textContent = "Faltan la URL y la clave del proyecto."; err.hidden = false; return; }
+    if(!email){ err.textContent = "Primero escribe tu correo arriba y vuelve a tocar este botón."; err.hidden = false; return; }
+    const boton = document.getElementById("acc-olvide");
+    boton.disabled = true;
+    // El mismo mensaje se muestra haya o no una cuenta con ese correo,
+    // para no revelar si existe o no — solo quien sea dueño del correo
+    // puede ver si de verdad le llegó algo.
+    try{ await pedirRecuperacion(email); }catch(_){}
+    ok.textContent = "Si ese correo tiene una cuenta, te va a llegar un enlace para elegir una contraseña nueva.";
+    ok.hidden = false;
+    boton.disabled = false;
+  });
   document.getElementById("form-acceso").addEventListener("submit", async e => {
     e.preventDefault();
     const btn = document.getElementById("acc-entrar");
@@ -2018,7 +2146,7 @@ function montarMenu(){
       seccionCuenta = `<div class="config-seccion">
         <h4>Cuenta</h4>
         ${backend === "supabase"
-          ? `<p class="tenue" style="margin:0 0 8px">${sesion && sesion.email ? esc(sesion.email) : ""}</p><button data-acc="salir" style="width:100%">Cerrar sesión</button>`
+          ? `<p class="tenue" style="margin:0 0 8px">${sesion && sesion.email ? esc(sesion.email) : ""}</p><button data-acc="cambiar-clave" style="width:100%">Cambiar contraseña</button><button data-acc="salir" style="width:100%">Cerrar sesión</button>`
           : `<button data-acc="entrar" style="width:100%">Activar sincronización en la nube</button>`}
       </div>`;
     }
@@ -2071,6 +2199,7 @@ function montarMenu(){
     if(acc === "cifrado-importar") mostrarTexto("Restaurar copia cifrada", "Pega aquí el contenido del archivo cifrado. Enseguida se te pedirá la frase de acceso. Esto reemplaza todos los datos actuales.", "", true, "cifrado");
     if(acc === "historial") await mostrarHistorial();
     if(acc === "entrar"){ escribirJson(CLAVE_SOLO_LOCAL, null); mostrarAcceso(""); }
+    if(acc === "cambiar-clave"){ abrirCambiarClave(false); }
     if(acc === "salir"){
       salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); escribirJson(CLAVE_ACTIVIDAD, null); tocado = false;
       estado = semillaEstado(); sincronizarControles(); render();
@@ -2154,19 +2283,20 @@ function montarHistorial(){
 }
 
 /* ============ arranque ============ */
-function arrancar(){
+async function arrancar(){
   try{ const tema = localStorage.getItem(CLAVE_LOCAL + ":tema"); if(tema) document.documentElement.setAttribute("data-theme", tema); }catch(_){}
   sesion = leerJson(CLAVE_SESION); // se lee antes de la caché para que claveEstado() ya sepa de quién es
   const local = leerLocal();
   estado = local ? sanear(local) : semillaEstado();
-  montarTabs(); montarPeriodo(); montarDialogo(); montarTransferencia(); montarVistaEventos(); montarMenu(); montarAcceso(); montarInactividad(); montarHistorial(); montarConfirmarBorrado();
+  montarTabs(); montarPeriodo(); montarDialogo(); montarTransferencia(); montarVistaEventos(); montarMenu(); montarAcceso(); montarInactividad(); montarHistorial(); montarConfirmarBorrado(); montarCambiarClave();
   sincronizarControles();
   setEstadoGuardado("");
   render();
   document.getElementById("btn-nuevo").addEventListener("click", () => abrirMov(null));
   document.getElementById("btn-nuevo-lado").addEventListener("click", () => abrirMov(null));
   document.getElementById("fab").addEventListener("click", () => abrirMov(null));
-  iniciarSync();
+  const vinoDeRecuperacion = await revisarRecuperacion();
+  if(!vinoDeRecuperacion) iniciarSync();
 }
 arrancar();
 </script>
