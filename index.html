@@ -317,7 +317,7 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
     <p class="sub" id="acc-sub">Entra con tu correo y contraseña para que tus datos te sigan en el celular y en el computador. Cada persona tiene su propio inicio de sesión y ve solo su propia información.</p>
     <form id="form-acceso">
       <label>Correo<input type="email" id="acc-email" autocomplete="username" required></label>
-      <label>Contraseña<input type="password" id="acc-clave" autocomplete="current-password" minlength="6" inputmode="numeric" required></label>
+      <label><span id="acc-clave-etq">Contraseña</span><input type="password" id="acc-clave" autocomplete="current-password" inputmode="numeric" required></label>
       <details id="acceso-config">
         <summary>Datos de mi proyecto de Supabase</summary>
         <label>URL del proyecto<input type="url" id="acc-url" placeholder="https://xxxxxxxx.supabase.co"></label>
@@ -447,14 +447,14 @@ textarea.volcado{width:100%; min-height:150px; font-family:ui-monospace,SFMono-R
 </dialog>
 
 <dialog id="dlg-clave">
-  <div class="dlg-cab"><h3 class="serif" id="clave-titulo">Cambiar contraseña</h3><p class="sub" id="clave-sub">Elige una contraseña nueva. Nadie más la verá.</p></div>
+  <div class="dlg-cab"><h3 class="serif" id="clave-titulo">Cambiar contraseña</h3><p class="sub" id="clave-sub">Elige un PIN de 4 números, o una contraseña de 6 o más caracteres si prefieres una más segura.</p></div>
   <form id="form-clave" style="padding:0 18px 18px; display:flex; flex-direction:column; gap:10px">
     <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-3)">Nueva contraseña
-      <input type="password" id="clave-nueva" inputmode="numeric" minlength="6" autocomplete="new-password" required
+      <input type="password" id="clave-nueva" inputmode="numeric" autocomplete="new-password" required
         style="background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:9px 12px; font-size:14px; color:var(--ink)">
     </label>
     <label style="display:flex; flex-direction:column; gap:4px; font-size:12.5px; color:var(--ink-3)">Repite la contraseña
-      <input type="password" id="clave-repetir" inputmode="numeric" minlength="6" autocomplete="new-password" required
+      <input type="password" id="clave-repetir" inputmode="numeric" autocomplete="new-password" required
         style="background:var(--surface-2); border:1px solid var(--line); border-radius:14px; padding:9px 12px; font-size:14px; color:var(--ink)">
     </label>
     <p class="acc-error" id="clave-error" hidden></p>
@@ -744,12 +744,20 @@ function guardarSesion(r){
   escribirJson(CLAVE_SESION, sesion);
   return sesion;
 }
+/* PIN de 4 números: Supabase exige 6 o más caracteres, así que un PIN de
+   exactamente 4 dígitos se alarga con un prefijo fijo antes de enviarlo.
+   Cualquier otra cosa (las contraseñas que ya existen, de 6+ caracteres)
+   viaja tal cual, sin tocar. Un PIN de 4 dígitos nunca coincide con una
+   contraseña antigua porque antes el mínimo era 6. */
+const PREFIJO_PIN = "finanzas-pin-";
+function esPin(texto){ return /^\d{4}$/.test(String(texto)); }
+function claveParaServidor(texto){ return esPin(texto) ? PREFIJO_PIN + texto : texto; }
 async function entrar(email, clave){
-  const r = await nubeFetch("/auth/v1/token?grant_type=password", {method:"POST", body: JSON.stringify({email: email, password: clave})}, false);
+  const r = await nubeFetch("/auth/v1/token?grant_type=password", {method:"POST", body: JSON.stringify({email: email, password: claveParaServidor(clave)})}, false);
   return guardarSesion(r);
 }
 async function registrar(email, clave){
-  const r = await nubeFetch("/auth/v1/signup", {method:"POST", body: JSON.stringify({email: email, password: clave})}, false);
+  const r = await nubeFetch("/auth/v1/signup", {method:"POST", body: JSON.stringify({email: email, password: claveParaServidor(clave)})}, false);
   // Si el proyecto pide confirmar el correo, Supabase responde sin access_token
   // y hay que avisarle a la persona que revise su bandeja antes de entrar.
   if(r && r.access_token) return guardarSesion(r);
@@ -763,7 +771,7 @@ async function pedirRecuperacion(email){
   await nubeFetch("/auth/v1/recover", {method:"POST", body: JSON.stringify({email: email, redirect_to: destino})}, false);
 }
 async function cambiarClave(nuevaClave){
-  await nubeFetch("/auth/v1/user", {method:"PUT", body: JSON.stringify({password: nuevaClave})}, true);
+  await nubeFetch("/auth/v1/user", {method:"PUT", body: JSON.stringify({password: claveParaServidor(nuevaClave)})}, true);
 }
 async function revisarRecuperacion(){
   // Cuando alguien toca el enlace del correo de recuperación, Supabase lo
@@ -802,8 +810,8 @@ function abrirCambiarClave(modoRecuperacion){
   const dlg = document.getElementById("dlg-clave");
   document.getElementById("clave-titulo").textContent = modoClaveRecuperacion ? "Elige tu nueva contraseña" : "Cambiar contraseña";
   document.getElementById("clave-sub").textContent = modoClaveRecuperacion
-    ? "Veniste desde el enlace de recuperación. Escribe una contraseña nueva para volver a entrar."
-    : "Elige una contraseña nueva. Nadie más la verá.";
+    ? "Viniste desde el enlace de recuperación. Elige un PIN de 4 números (o una contraseña de 6+ caracteres) para volver a entrar."
+    : "Elige un PIN de 4 números, o una contraseña de 6 o más caracteres si prefieres una más segura. Nadie más la verá.";
   document.getElementById("clave-cancelar").textContent = modoClaveRecuperacion ? "Prefiero intentarlo después" : "Cancelar";
   document.getElementById("clave-nueva").value = "";
   document.getElementById("clave-repetir").value = "";
@@ -824,7 +832,7 @@ function montarCambiarClave(){
     const btn = document.getElementById("clave-guardar");
     err.hidden = true; ok.hidden = true;
     const n1 = document.getElementById("clave-nueva").value, n2 = document.getElementById("clave-repetir").value;
-    if(n1.length < 6){ err.textContent = "La contraseña necesita al menos 6 caracteres."; err.hidden = false; return; }
+    if(!esPin(n1) && n1.length < 6){ err.textContent = "Usa un PIN de 4 números, o una contraseña de al menos 6 caracteres."; err.hidden = false; return; }
     if(n1 !== n2){ err.textContent = "Las dos contraseñas no coinciden."; err.hidden = false; return; }
     btn.disabled = true; btn.textContent = "Guardando…";
     try{
@@ -1061,9 +1069,10 @@ function ponerModo(registro){
   modoRegistro = registro;
   document.getElementById("acc-titulo").textContent = registro ? "Crea tu cuenta" : "Finanzas personales";
   document.getElementById("acc-sub").textContent = registro
-    ? "Elige tu correo y una contraseña. Nadie más va a ver tus datos: cada cuenta tiene sus propias finanzas, separadas de las demás."
+    ? "Elige tu correo y un PIN de 4 números. Nadie más va a ver tus datos: cada cuenta tiene sus propias finanzas, separadas de las demás."
     : "Entra con tu correo y contraseña para que tus datos te sigan en el celular y en el computador. Cada persona tiene su propio inicio de sesión y ve solo su propia información.";
   document.getElementById("acc-entrar").textContent = registro ? "Crear cuenta" : "Entrar";
+  document.getElementById("acc-clave-etq").textContent = registro ? "PIN (4 números)" : "Contraseña o PIN";
   document.getElementById("acc-alternar").textContent = registro ? "Ya tengo cuenta · entrar" : "Soy nuevo aquí · crear mi cuenta";
   document.getElementById("acc-clave").autocomplete = registro ? "new-password" : "current-password";
   document.getElementById("acceso-error").hidden = true;
@@ -1111,6 +1120,9 @@ function montarAcceso(){
     }
     const email = document.getElementById("acc-email").value.trim();
     const clave = document.getElementById("acc-clave").value;
+    if(modoRegistro && !esPin(clave)){
+      err.textContent = "El PIN debe ser de exactamente 4 números."; err.hidden = false; return;
+    }
     btn.disabled = true; btn.textContent = modoRegistro ? "Creando cuenta…" : "Entrando…"; err.hidden = true; ok.hidden = true;
     try{
       if(modoRegistro){
@@ -1135,7 +1147,7 @@ function montarAcceso(){
       const m = String(ex && ex.message || "");
       if(/user already registered|already exists/i.test(m)) err.textContent = "Ese correo ya tiene una cuenta. Usa 'Ya tengo cuenta'.";
       else if(/invalid|credential|grant/i.test(m)) err.textContent = "Correo o contraseña incorrectos.";
-      else if(/password/i.test(m) && modoRegistro) err.textContent = "La contraseña necesita al menos 6 caracteres.";
+      else if(/password/i.test(m) && modoRegistro) err.textContent = "El servidor rechazó ese PIN. Prueba con otro.";
       else err.textContent = m;
       err.hidden = false;
       mostrarAcceso(err.textContent);
