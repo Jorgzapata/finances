@@ -1,0 +1,9 @@
+.env
+.env.*
+*.pem
+*.key
+node_modules/
+.DS_Store
+# copias de seguridad descargadas desde la app (contienen tus finanzas)
+finanzas-*.json
+movimientos-*.csv

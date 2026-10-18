@@ -1,0 +1,21 @@
+# La clave "publishable" de Supabase es pública por diseño (vive en el
+# navegador), así que no se marca como fuga. Cualquier clave "secret",
+# "service_role" o JWT sí se marcará.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "supabase-secret-key"
+description = "Clave secreta de Supabase"
+regex = '''sb_secret_[A-Za-z0-9_\-]{20,}'''
+keywords = ["sb_secret_"]
+
+[[rules]]
+id = "supabase-service-role-jwt"
+description = "JWT de Supabase (anon antigua o service_role)"
+regex = '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{20,}'''
+keywords = ["eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"]
+
+[allowlist]
+description = "Clave publishable (pública por diseño)"
+regexes = ['''sb_publishable_[A-Za-z0-9_\-]+''']

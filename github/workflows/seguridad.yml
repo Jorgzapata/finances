@@ -1,0 +1,28 @@
+# Escaneo automático en cada cambio y una vez por semana:
+#  - gitleaks: busca contraseñas o claves secretas en el código y en TODO el historial de Git
+#  - osv-scanner: revisa dependencias con vulnerabilidades conocidas (hoy la app no tiene ninguna)
+name: Seguridad
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 12 * * 1"
+permissions:
+  contents: read
+jobs:
+  secretos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Buscar secretos en el historial
+        run: |
+          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:latest detect --source /repo --config /repo/.gitleaks.toml --redact --verbose
+  dependencias:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Escanear dependencias (OSV)
+        run: |
+          docker run --rm -v "$PWD:/src" ghcr.io/google/osv-scanner:latest scan source -r /src || [ $? -eq 128 ]
