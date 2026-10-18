@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; font-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta name="referrer" content="no-referrer">
+<title>Política de cookies · Finanzas personales</title>
+<meta name="theme-color" content="#062F28">
+<style>
+@font-face{font-family:"Plus Jakarta Sans";src:url("fonts/plus-jakarta-sans-latin.woff2") format("woff2");font-weight:200 800;font-display:swap}
+:root{--bg:#F6F6F3;--surface:#fff;--surface-2:#F0F0EC;--line:#E2E2DD;--ink:#062F28;--ink-2:#34443F;--ink-3:#66706C;--azul:#26688A;--sel:#F7A81E;--sel-soft:#FDEFD6;color-scheme:light dark}
+@media (prefers-color-scheme:dark){:root{--bg:#081B17;--surface:#0F2822;--surface-2:#14332B;--line:#22413A;--ink:#F1F7EE;--ink-2:#C6D4CB;--ink-3:#9AAEA4;--azul:#66B0D1;--sel-soft:#3A2A10}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink-2);font-family:"Plus Jakarta Sans",system-ui,sans-serif;font-size:16px;line-height:1.7}
+.barra{position:sticky;top:0;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line);z-index:2}
+.barra div{max-width:820px;margin:0 auto;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.barra a{color:var(--ink);font-weight:600;text-decoration:none;font-size:14px}
+.barra nav{display:flex;gap:16px;flex-wrap:wrap}.barra nav a{color:var(--ink-3);font-weight:500}.barra nav a[aria-current]{color:var(--ink);font-weight:700}
+main{max-width:820px;margin:0 auto;padding:40px 20px 80px}
+h1{color:var(--ink);font-size:clamp(28px,5vw,38px);letter-spacing:-.03em;line-height:1.15;margin:0 0 8px}
+.meta{color:var(--ink-3);font-size:14px;margin:0 0 28px}
+h2{color:var(--ink);font-size:20px;letter-spacing:-.015em;margin:40px 0 8px;scroll-margin-top:72px}
+h3{color:var(--ink);font-size:16px;margin:24px 0 4px}
+a{color:var(--azul)}
+.resumen{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px 24px;margin:0 0 24px}
+.resumen strong{color:var(--ink)}
+.indice{background:var(--surface-2);border-radius:16px;padding:16px 24px;margin:0 0 8px;font-size:15px}
+.indice ol{margin:8px 0 0;padding-left:20px}
+table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0;background:var(--surface);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);color:var(--ink);font-weight:600}
+code{font-size:13px;background:var(--surface-2);padding:1px 6px;border-radius:6px}
+.pendiente{background:var(--sel-soft);color:var(--ink);padding:0 4px;border-radius:4px;font-weight:600}
+.aviso-plantilla{border-left:4px solid var(--sel);background:var(--surface);padding:12px 16px;border-radius:0 12px 12px 0;font-size:14px;margin:0 0 24px}
+@media print{.barra,.aviso-plantilla{display:none}body{background:#fff;color:#000}}
+</style>
+</head>
+<body>
+<header class="barra"><div><a href="index.html">← Volver a la app</a><nav aria-label="Documentos legales"><a href="terminos.html">Términos</a><a href="privacidad.html">Privacidad</a><a href="cookies.html" aria-current="page">Cookies</a></nav></div></header>
+<main>
+<p class="aviso-plantilla"><strong>Antes de publicar:</strong> reemplaza los datos <span class="pendiente">[resaltados]</span> por los tuyos y, si la app tendrá usuarios distintos a ti y tu familia, pide a un abogado que revise este texto. Luego borra este aviso.</p>
+<h1>Política de cookies y almacenamiento local</h1>
+<p class="meta">Versión 1.0 · Vigente desde el 17 de octubre de 2026</p>
+
+<div class="resumen"><strong>En pocas palabras:</strong> la app <strong>no usa cookies</strong>. Guarda en tu navegador solo lo estrictamente necesario para funcionar (tu sesión, tus datos y tus preferencias). No hay cookies de publicidad, analítica ni de terceros, por eso no te mostramos un aviso para aceptarlas.</div>
+
+<h2>1. ¿Qué son las cookies y el almacenamiento local?</h2>
+<p>Las cookies son pequeños archivos que un sitio guarda en tu navegador. El almacenamiento local (<code>localStorage</code> y <code>sessionStorage</code>) cumple una función parecida: guarda información en tu dispositivo, pero no viaja automáticamente al servidor en cada visita.</p>
+
+<h2>2. Qué guarda esta app en tu navegador</h2>
+<table>
+<thead><tr><th>Nombre</th><th>Para qué sirve</th><th>Duración</th><th>Tipo</th></tr></thead>
+<tbody>
+<tr><td><code>finanzas-personales:v1:sesion</code></td><td>Mantener tu sesión iniciada de forma segura.</td><td>Hasta cerrar la pestaña, o hasta cerrar sesión si marcas "mantener la sesión".</td><td>Estrictamente necesario</td></tr>
+<tr><td><code>finanzas-personales:v1:u:…</code></td><td>Copia de tus datos para que la app abra rápido y funcione sin conexión.</td><td>Se borra al cerrar sesión o tras 20 minutos de inactividad.</td><td>Estrictamente necesario</td></tr>
+<tr><td><code>finanzas-personales:v1</code></td><td>Tus datos cuando usas la app "solo en este dispositivo".</td><td>Hasta que los borres.</td><td>Estrictamente necesario</td></tr>
+<tr><td><code>…:actividad</code></td><td>Saber cuándo fue tu último uso para cerrar la sesión por inactividad.</td><td>Mientras dure la sesión.</td><td>Seguridad</td></tr>
+<tr><td><code>…:intentos</code></td><td>Contar intentos fallidos de inicio de sesión y frenar ataques de fuerza bruta.</td><td>Hasta un inicio de sesión correcto.</td><td>Seguridad</td></tr>
+<tr><td><code>…:recordar</code></td><td>Recordar si elegiste mantener la sesión en este dispositivo.</td><td>Hasta que lo cambies.</td><td>Preferencia</td></tr>
+<tr><td><code>…:tema</code></td><td>Recordar si prefieres el tema claro u oscuro.</td><td>Hasta que lo cambies.</td><td>Preferencia</td></tr>
+<tr><td><code>…:consent-local</code>, <code>…:solo-local</code></td><td>Recordar que aceptaste los documentos legales y que elegiste usar la app sin cuenta.</td><td>Hasta que los borres.</td><td>Estrictamente necesario</td></tr>
+</tbody></table>
+<p>La tipografía se carga desde nuestro propio servidor, no desde Google Fonts, así que ningún tercero recibe tu dirección IP al abrir la app.</p>
+
+<h2>3. Terceros</h2>
+<p>Por defecto no se carga ningún servicio de terceros en tu navegador. Si se activa la verificación anti-robots (Cloudflare Turnstile) en la pantalla de acceso, ese servicio puede usar almacenamiento técnico propio, únicamente para comprobar que eres una persona; es una medida de seguridad necesaria y no se usa para publicidad.</p>
+
+<h2>4. ¿Necesito dar consentimiento?</h2>
+<p>No. Todo lo que guarda la app es estrictamente necesario para prestarte el servicio que pediste o para proteger tu cuenta, y por eso no requiere un consentimiento adicional. Si en el futuro incorporamos cookies de analítica, publicidad o grabación de sesiones, te pediremos permiso antes de activarlas, con la opción de rechazarlas.</p>
+
+<h2>5. Cómo borrar esta información</h2>
+<ul>
+<li>Cerrar sesión borra tu sesión y la copia local de tus datos.</li>
+<li>Puedes borrar todo desde la configuración de tu navegador (Privacidad → Borrar datos de sitios).</li>
+<li>Si usabas la app "solo en este dispositivo", borrar los datos del sitio elimina tus registros: descarga antes una copia desde Configuración.</li>
+</ul>
+
+<h2>6. Contacto</h2>
+<p>Dudas sobre esta política: <span class="pendiente">[correo@dominio.com]</span>.</p>
+
+</main>
+</body>
+</html>
