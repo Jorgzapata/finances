@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ISlGqxjkrBfq7rYecEQREpF/xgpu/r/E9Q4k98hLq4o=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-D8D2P2O7Sr629tazWGtkImfQHOV3HjccXwhYoigwubc=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -407,8 +407,9 @@ a.fila-config{text-decoration:none}
 .cinta{display:flex; flex-wrap:wrap; gap:var(--s3); align-items:center; justify-content:space-between; padding:var(--s3) var(--s4); margin-bottom:var(--s4); background:var(--sel-soft); border-radius:var(--r-md); font-size:14px}
 
 /* ---------- acceso ---------- */
-#acceso{position:fixed; inset:0; z-index:100; display:grid; place-items:center; padding:var(--s4); background:var(--bg); overflow-y:auto}
-.acc-caja{width:min(420px,100%); padding:var(--s6) var(--s5) var(--s5); margin:auto}
+#acceso{position:fixed; inset:0; z-index:100; display:grid; grid-template-columns:minmax(0,1fr); place-items:center; padding:var(--s4); background:var(--bg); overflow-y:auto}
+.acc-caja{width:100%; max-width:420px; min-width:0; padding:var(--s6) var(--s5) var(--s5); margin:auto}
+@media (max-width:420px){.acc-caja{padding:var(--s5) var(--s4) var(--s4)}}
 .acc-caja .marca-app{padding:0; margin-bottom:var(--s5)}
 .acc-caja h2{font-size:26px; letter-spacing:-.03em}
 .acc-caja form{display:flex; flex-direction:column; gap:var(--s4); margin-top:var(--s5)}
@@ -433,6 +434,17 @@ textarea.volcado{width:100%; min-height:160px; font-family:ui-monospace,SFMono-R
 .graf-punto:hover .graf-guia, .graf-punto:focus .graf-guia{opacity:.6}
 .graf-guia{opacity:0; transition:opacity .12s}
 
+/* ---------- cuenta recordada ---------- */
+.cuenta-recordada{display:flex; flex-direction:column; gap:var(--s2)}
+.cr-actual{display:flex; align-items:center; gap:var(--s3); padding:var(--s3); border-radius:var(--r-md); background:var(--surface-2)}
+.cr-avatar{width:40px; height:40px; border-radius:50%; display:grid; place-items:center; flex-shrink:0; background:var(--hero-2); color:var(--acento); font-weight:800; font-size:17px; text-transform:uppercase}
+.cr-texto{flex:1 1 auto; min-width:0; display:flex; flex-direction:column}
+.cr-texto strong{font-size:14.5px; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.cr-texto small{font-size:12px; color:var(--ink-3)}
+.cr-actual .btn.texto{flex-shrink:0}
+.cr-opciones{display:flex; flex-direction:column; gap:2px; padding:var(--s2); border:1px solid var(--line-soft); border-radius:var(--r-md)}
+.cr-opciones .cr-avatar{width:28px; height:28px; font-size:13px}
+.checks-acceso{display:flex; flex-direction:column; gap:var(--s2)}
 /* ---------- PIN de 6 dígitos (cajas tipo código de verificación) ---------- */
 .pin-cab{display:flex; align-items:center; justify-content:space-between; gap:8px}
 .ver-pin{background:none; border:0; color:var(--ink-3); cursor:pointer; padding:4px; border-radius:var(--r-sm); display:grid; place-items:center}
@@ -482,7 +494,20 @@ textarea.volcado{width:100%; min-height:160px; font-family:ui-monospace,SFMono-R
     <form id="form-acceso" novalidate>
       <!-- campo trampa para bots: las personas no lo ven ni lo llenan -->
       <label class="trampa" aria-hidden="true">Sitio web<input type="text" id="acc-web" name="website" tabindex="-1" autocomplete="off"></label>
-      <label class="campo">Correo
+      <!-- cuenta recordada en este dispositivo: solo se guarda el correo, nunca el PIN -->
+      <div class="cuenta-recordada" id="acc-recordada" hidden>
+        <div class="cr-actual">
+          <span class="cr-avatar" id="cr-avatar" aria-hidden="true"></span>
+          <div class="cr-texto"><strong id="cr-correo"></strong><small>Recordada aquí</small></div>
+          <button type="button" class="btn texto" id="cr-no-soy" aria-expanded="false">¿No eres tú?</button>
+        </div>
+        <div class="cr-opciones" id="cr-opciones" hidden>
+          <div id="cr-otras"></div>
+          <button type="button" class="fila-config" id="cr-otro"><svg class="ico " viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.25 9C8.25 6.92893 9.92893 5.25 12 5.25C14.0711 5.25 15.75 6.92893 15.75 9C15.75 11.0711 14.0711 12.75 12 12.75C9.92893 12.75 8.25 11.0711 8.25 9ZM12 6.75C10.7574 6.75 9.75 7.75736 9.75 9C9.75 10.2426 10.7574 11.25 12 11.25C13.2426 11.25 14.25 10.2426 14.25 9C14.25 7.75736 13.2426 6.75 12 6.75Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M1.25 12C1.25 6.06294 6.06294 1.25 12 1.25C17.9371 1.25 22.75 6.06294 22.75 12C22.75 17.9371 17.9371 22.75 12 22.75C6.06294 22.75 1.25 17.9371 1.25 12ZM12 2.75C6.89137 2.75 2.75 6.89137 2.75 12C2.75 14.5456 3.77827 16.851 5.4421 18.5235C5.6225 17.5504 5.97694 16.6329 6.68837 15.8951C7.75252 14.7915 9.45416 14.25 12 14.25C14.5457 14.25 16.2474 14.7915 17.3115 15.8951C18.023 16.6329 18.3774 17.5505 18.5578 18.5236C20.2217 16.8511 21.25 14.5456 21.25 12C21.25 6.89137 17.1086 2.75 12 2.75ZM17.1937 19.6554C17.0918 18.4435 16.8286 17.5553 16.2318 16.9363C15.5823 16.2628 14.3789 15.75 12 15.75C9.62099 15.75 8.41761 16.2628 7.76815 16.9363C7.17127 17.5553 6.90811 18.4434 6.80622 19.6553C8.28684 20.6618 10.0747 21.25 12 21.25C13.9252 21.25 15.7131 20.6618 17.1937 19.6554Z" fill="currentColor"/></svg><span>Entrar con otro correo</span></button>
+          <button type="button" class="fila-config peligro" id="cr-quitar"><svg class="ico " viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><line x1="18.6666" y1="5.3333" x2="5.3333" y2="18.6666" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></line><line x1="5.3333" y1="5.3333" x2="18.6666" y2="18.6666" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"></line></svg><span>Quitar esta cuenta de este dispositivo</span></button>
+        </div>
+      </div>
+      <label class="campo" id="acc-campo-email">Correo
         <input type="email" id="acc-email" autocomplete="username" maxlength="254" required inputmode="email" spellcheck="false">
       </label>
       <div class="campo">
@@ -505,7 +530,10 @@ textarea.volcado{width:100%; min-height:160px; font-family:ui-monospace,SFMono-R
           <label class="casilla"><input type="checkbox" id="acc-privacidad"><span>Autorizo el tratamiento de mis datos según la <a href="privacidad.html" target="_blank" rel="noopener">Política de privacidad</a>, incluida su transferencia al proveedor de alojamiento fuera de Colombia.</span></label>
         </div>
       </div>
-      <label class="check" id="acc-recordar-caja"><input type="checkbox" id="acc-recordar"> Mantener la sesión en este dispositivo</label>
+      <div class="checks-acceso">
+        <label class="check" id="acc-recordar-correo-caja"><input type="checkbox" id="acc-recordar-correo" checked> Recordar mi correo en este dispositivo</label>
+        <label class="check" id="acc-recordar-caja"><input type="checkbox" id="acc-recordar"> Mantener la sesión abierta (no pedir el PIN)</label>
+      </div>
       <div id="turnstile-caja"></div>
       <details id="acceso-config">
         <summary>Datos de mi proyecto de Supabase</summary>
@@ -1007,6 +1035,8 @@ const CLAVE_RECORDAR = CLAVE_LOCAL + ":recordar";
 const CLAVE_INTENTOS = CLAVE_LOCAL + ":intentos";
 const CLAVE_CONSENT_LOCAL = CLAVE_LOCAL + ":consent-local";
 const CLAVE_CONSENT_PEND = CLAVE_LOCAL + ":consent-pendiente";
+const CLAVE_RECORDADAS = CLAVE_LOCAL + ":cuentas-recordadas";
+const MAX_RECORDADAS = 3;
 
 let backend = "local";           // "claude" | "supabase" | "local"
 let db = null, dbDoc = null, sesion = null;
@@ -1126,6 +1156,16 @@ function cargarCaptcha(){
   s.id = "ts-script"; s.async = true; s.defer = true; s.referrerPolicy = "no-referrer";
   s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=alCargarTurnstile";
   document.head.appendChild(s);
+}
+/* La verificación de Cloudflare tarda un instante en resolverse (sobre todo
+   justo después de un intento anterior). Si la persona termina el PIN antes,
+   se espera hasta 8 segundos en vez de mostrar un error de inmediato. */
+function esperarCaptcha(ms){
+  if(!CONFIG.TURNSTILE_SITEKEY || tokenCaptcha) return Promise.resolve(!!tokenCaptcha || !CONFIG.TURNSTILE_SITEKEY);
+  return new Promise(res => {
+    const fin = Date.now() + (ms || 8000);
+    const t = setInterval(() => { if(tokenCaptcha || Date.now() > fin){ clearInterval(t); res(!!tokenCaptcha); } }, 150);
+  });
 }
 function estadoIntentos(){ return leerJson(CLAVE_INTENTOS) || {n:0, hasta:0}; }
 function segundosBloqueo(){ const e = estadoIntentos(); return Math.max(0, Math.ceil((e.hasta - Date.now())/1000)); }
@@ -1516,12 +1556,86 @@ async function iniciarSync(){
 }
 
 /* ---- pantalla de acceso ---- */
+/* ---- cuentas recordadas: solo el correo, en este dispositivo ----
+   Nunca se guarda el PIN ni la sesión: recordar el correo no abre la cuenta,
+   solo evita volver a escribirlo. Se recuerdan hasta 3 correos. */
+let cuentaElegida = null;
+const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+function recordadas(){
+  const l = leerJson(CLAVE_RECORDADAS);
+  return Array.isArray(l) ? l.filter(c => c && RE_EMAIL.test(String(c.email || ""))).slice(0, MAX_RECORDADAS) : [];
+}
+function guardarRecordada(email){
+  const l = recordadas().filter(c => c.email !== email);
+  l.unshift({email: email, ultimo: Date.now()});
+  escribirJson(CLAVE_RECORDADAS, l.slice(0, MAX_RECORDADAS));
+}
+function quitarRecordada(email){ escribirJson(CLAVE_RECORDADAS, recordadas().filter(c => c.email !== email)); }
+/* el correo se muestra enmascarado (jo••••@gmail.com) por si alguien mira la pantalla */
+function enmascararCorreo(email){
+  const [u, d] = String(email).split("@");
+  return (u.length <= 2 ? u[0] + "•" : u.slice(0, 2) + "•".repeat(Math.min(6, Math.max(2, u.length - 2)))) + "@" + d;
+}
+function aplicarVistaAcceso(){
+  const caja = document.getElementById("acc-recordada");
+  const usar = !modoRegistro && !!cuentaElegida;
+  caja.hidden = !usar;
+  document.getElementById("acc-campo-email").hidden = usar;
+  document.getElementById("cr-opciones").hidden = true;
+  document.getElementById("cr-no-soy").setAttribute("aria-expanded", "false");
+  if(usar){
+    document.getElementById("acc-email").value = cuentaElegida;
+    document.getElementById("cr-avatar").textContent = cuentaElegida[0];
+    document.getElementById("cr-correo").textContent = enmascararCorreo(cuentaElegida);
+    document.getElementById("acc-recordar-correo").checked = true;
+    document.getElementById("acc-titulo").textContent = "Hola de nuevo";
+    document.getElementById("acc-sub").textContent = "Escribe tu PIN para entrar.";
+    const otras = recordadas().filter(c => c.email !== cuentaElegida);
+    document.getElementById("cr-otras").innerHTML = otras.map(c =>
+      `<button type="button" class="fila-config" data-cuenta-recordada="${esc(c.email)}"><span class="cr-avatar">${esc(c.email[0])}</span><span>${esc(enmascararCorreo(c.email))}</span></button>`).join("");
+  }else{
+    document.getElementById("acc-email").value = "";
+  }
+}
+function enfocarAcceso(){
+  setTimeout(() => {
+    const id = (!modoRegistro && cuentaElegida) ? "acc-clave" : "acc-email";
+    const i = document.getElementById(id); if(i) i.focus();
+  }, 60);
+}
+function montarRecordadas(){
+  document.getElementById("cr-no-soy").addEventListener("click", e => {
+    const op = document.getElementById("cr-opciones");
+    op.hidden = !op.hidden;
+    e.currentTarget.setAttribute("aria-expanded", op.hidden ? "false" : "true");
+  });
+  document.getElementById("cr-otras").addEventListener("click", e => {
+    const b = e.target.closest("[data-cuenta-recordada]"); if(!b) return;
+    cuentaElegida = b.dataset.cuentaRecordada; limpiarPin("acc-clave"); aplicarVistaAcceso(); enfocarAcceso();
+  });
+  document.getElementById("cr-otro").addEventListener("click", () => {
+    cuentaElegida = null; limpiarPin("acc-clave"); aplicarVistaAcceso();
+    document.getElementById("acc-titulo").textContent = "Entra a tu cuenta";
+    document.getElementById("acc-sub").textContent = "Escribe tu correo y tu PIN.";
+    enfocarAcceso();
+  });
+  document.getElementById("cr-quitar").addEventListener("click", () => {
+    if(!cuentaElegida) return;
+    quitarRecordada(cuentaElegida);
+    const sig = recordadas()[0];
+    cuentaElegida = sig ? sig.email : null;
+    limpiarPin("acc-clave"); ponerModo(false); enfocarAcceso();
+  });
+}
+
 function mostrarAcceso(mensaje){
   const caja = document.getElementById("acceso");
   if(!caja) return;
   const hayConf = !!confNube();
   const fijo = !!(CONFIG.SUPABASE_URL && CONFIG.SUPABASE_KEY);
   const g = leerJson(CLAVE_NUBE) || {};
+  const ult = recordadas()[0];
+  cuentaElegida = ult ? ult.email : null;
   ponerModo(false);
   const err = document.getElementById("acceso-error");
   err.textContent = mensaje || ""; err.hidden = !mensaje;
@@ -1537,7 +1651,7 @@ function mostrarAcceso(mensaje){
   document.documentElement.style.overflow = "hidden";
   document.body.style.overflow = "hidden";
   cargarCaptcha();
-  setTimeout(() => { const i = document.getElementById("acc-email"); if(i) i.focus(); }, 60);
+  enfocarAcceso();
 }
 function ocultarAcceso(){
   document.getElementById("acceso").hidden = true;
@@ -1550,7 +1664,7 @@ function ponerModo(registro){
   modoRegistro = registro;
   document.getElementById("acc-titulo").textContent = registro ? "Crea tu cuenta" : "Entra a tu cuenta";
   document.getElementById("acc-sub").textContent = registro
-    ? "Solo necesitamos un correo y una contraseña. Nadie más verá tus datos."
+    ? "Solo necesitamos un correo y un PIN de 6 números. Nadie más verá tus datos."
     : "Tus datos te siguen en el celular y en el computador. Cada cuenta ve solo su propia información.";
   document.getElementById("acc-entrar").textContent = registro ? "Crear cuenta" : "Entrar";
   document.getElementById("acc-clave-ayuda").textContent = registro ? "Elige 6 números. Evita secuencias como 123456 o números repetidos." : "Se envía solo cuando completas los 6 números.";
@@ -1563,6 +1677,7 @@ function ponerModo(registro){
   document.getElementById("acc-clave").autocomplete = registro ? "new-password" : "current-password";
   document.getElementById("acceso-error").hidden = true;
   document.getElementById("acceso-ok").hidden = true;
+  aplicarVistaAcceso();
 }
 function empezarComo(nuevaSesion){
   sesion = nuevaSesion; backend = "supabase"; tocado = false;
@@ -1582,7 +1697,7 @@ function montarAcceso(){
     err.hidden = true; ok.hidden = true;
     if(!confNube()){ err.textContent = "Faltan la URL y la clave del proyecto."; err.hidden = false; return; }
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)){ err.textContent = "Primero escribe tu correo arriba y vuelve a tocar este botón."; err.hidden = false; return; }
-    if(CONFIG.TURNSTILE_SITEKEY && !tokenCaptcha){ err.textContent = "Completa la verificación anti-robots."; err.hidden = false; return; }
+    if(CONFIG.TURNSTILE_SITEKEY && !(await esperarCaptcha(8000))){ err.textContent = "No se pudo completar la verificación anti-robots. Inténtalo de nuevo."; err.hidden = false; return; }
     const boton = document.getElementById("acc-olvide");
     boton.disabled = true;
     // mismo mensaje exista o no la cuenta: no revela qué correos están registrados
@@ -1625,8 +1740,12 @@ function montarAcceso(){
       if(!document.getElementById("acc-privacidad").checked){ fallar("Para crear la cuenta debes aceptar la Política de privacidad."); return; }
       consentimiento = datosConsentimiento("casilla-formulario-registro");
     }
-    if(CONFIG.TURNSTILE_SITEKEY && !tokenCaptcha){ fallar("Completa la verificación anti-robots."); return; }
-    btn.disabled = true; btn.textContent = modoRegistro ? "Creando cuenta…" : "Entrando…";
+    btn.disabled = true;
+    if(CONFIG.TURNSTILE_SITEKEY && !tokenCaptcha){
+      btn.textContent = "Verificando…";
+      if(!(await esperarCaptcha(8000))){ btn.disabled = false; btn.textContent = modoRegistro ? "Crear cuenta" : "Entrar"; fallar("No se pudo completar la verificación anti-robots. Revisa tu conexión e inténtalo de nuevo."); return; }
+    }
+    btn.textContent = modoRegistro ? "Creando cuenta…" : "Entrando…";
     try{
       if(modoRegistro){
         const s = await registrar(email, clave, consentimiento);
@@ -1642,6 +1761,9 @@ function montarAcceso(){
         const s = await entrar(email, clave);
         empezarComo(s);
       }
+      // recordar (o dejar de recordar) el correo solo después de entrar bien
+      if(document.getElementById("acc-recordar-correo").checked) guardarRecordada(email); else quitarRecordada(email);
+      cuentaElegida = document.getElementById("acc-recordar-correo").checked ? email : null;
       limpiarFallos();
       escribirJson(CLAVE_SOLO_LOCAL, null);
       ocultarAcceso();
@@ -2696,6 +2818,7 @@ function montarConfirmarBorrado(){
 }
 function borrarTodo(){ estado = semillaEstado(); estado.actualizado = Date.now(); marcar(); sincronizarControles(); render(); }
 async function eliminarCuenta(){
+  const correoCuenta = sesion && sesion.email;
   try{
     await nubeFetch("/rest/v1/rpc/eliminar_mi_cuenta", {method:"POST", body:"{}"}, true);
   }catch(ex){
@@ -2703,6 +2826,7 @@ async function eliminarCuenta(){
     return;
   }
   await salirSesion();
+  if(correoCuenta) quitarRecordada(correoCuenta);
   backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); escribirJson(CLAVE_ACTIVIDAD, null);
   estado = semillaEstado(); sincronizarControles(); render();
   mostrarAcceso("");
@@ -2881,7 +3005,7 @@ async function arrancar(){
   if(sesion && !RE_UUID.test(String(sesion.uid || ""))) sesion = null;
   const local = leerLocal();
   estado = local ? sanear(local) : semillaEstado();
-  montarTabs(); montarPeriodo(); montarGenericos(); montarPins(); montarDialogo(); montarTransferencia(); montarVistaEventos(); montarMenu();
+  montarTabs(); montarPeriodo(); montarGenericos(); montarPins(); montarRecordadas(); montarDialogo(); montarTransferencia(); montarVistaEventos(); montarMenu();
   montarAcceso(); montarInactividad(); montarHistorial(); montarConfirmarBorrado(); montarCambiarClave(); montarConsentimiento();
   enmascarar(document);
   sincronizarControles();
