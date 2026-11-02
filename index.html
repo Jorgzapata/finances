@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-x+/sk1Yuw3FImbiy8vP5EFI+b9+ahwIpZV9T7du1gK4=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-dRjzHi9Jv5KtNzosZ50MCH7cp+6qCJvqcmJmGMJ8I6s=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -177,13 +177,6 @@ html,body{overflow-x:clip}
 .lado-tema[aria-checked="true"] .interruptor{background:var(--sel)}
 .lado-tema[aria-checked="true"] .interruptor::after{transform:translateX(16px)}
 .lado-usuario{display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:0; border-radius:var(--r-lg); background:color-mix(in srgb,var(--surface-2) 70%, transparent); color:var(--ink); font:inherit; text-align:left; cursor:pointer; position:relative}
-.lado-salir{display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; border:0; border-radius:var(--r-lg); background:none; color:var(--ink-3); font:inherit; font-size:14px; font-weight:600; cursor:pointer; text-align:left; transition:background .15s,color .15s}
-.lado-salir[hidden]{display:none}
-.lado-salir:hover{background:color-mix(in srgb,var(--clay) 12%,transparent); color:var(--clay)}
-.lado-salir:active{transform:scale(.98)}
-.lado-salir:focus-visible{outline:2px solid var(--azul); outline-offset:2px}
-.lado-min .lado-salir{width:48px; height:44px; padding:0; justify-content:center}
-@media (max-height:900px){ .lado-min .lado-pie{gap:2px} .lado-min .lado-salir{height:36px} .lado-min .lado-usuario{height:40px} .lado-min .nav-lado{gap:2px} }
 .lado-usuario:hover{background:var(--surface-2)}
 .lado-usuario:focus-visible{outline:2px solid var(--azul); outline-offset:2px}
 .avatar{position:relative; flex:none; width:36px; height:36px; border-radius:50%; background:var(--hero-2); color:var(--acento); display:grid; place-items:center; font-weight:800; font-size:14px}
@@ -895,7 +888,6 @@ body.sincronizando #fab,body.sincronizando #btn-nuevo-lado{opacity:.55; transiti
       <button type="button" class="btn chico ancho" id="btn-hoy-lado" hidden>Ir al mes actual</button>
       <button type="button" class="nav-item lado-tema" id="lado-tema" role="switch" aria-checked="false" data-tip="Modo noche"><span class="ico-tema"></span><span class="etq">Modo noche</span><span class="interruptor etq"></span></button>
       <button type="button" class="lado-usuario" id="btn-menu-lado" data-tip="Configuración"><span class="avatar" id="lado-avatar" aria-hidden="true">F</span><span class="etq uc-txt"><strong id="lado-quien">Tu dinero, en orden</strong><span class="estado" id="estado-guardado-lado"></span></span></button>
-      <button type="button" class="lado-salir" id="btn-salir-lado" data-tip="Cerrar sesión" hidden><svg class="ico s18" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"></svg><span class="etq">Cerrar sesión</span></button>
       <nav class="lado-legal" aria-label="Documentos legales">
         <a href="terminos.html" target="_blank" rel="noopener">Términos</a>
         <a href="privacidad.html" target="_blank" rel="noopener">Privacidad</a>
@@ -3267,8 +3259,6 @@ function render(){
   document.title = (v ? v[1] + " · " : "") + "Finanzas personales";
   const quien = document.getElementById("lado-quien");
   if(quien) quien.textContent = (backend === "supabase" && sesion && sesion.email) ? sesion.email : (backend === "local" ? "Solo en este dispositivo" : "Tu dinero, en orden");
-  const bs = document.getElementById("btn-salir-lado");
-  if(bs){ bs.hidden = !(backend === "supabase" && sesion); const sv = bs.querySelector("svg"); if(sv && !sv.firstChild) sv.innerHTML = ICONOS.Logout; }
   const av = document.getElementById("lado-avatar");
   if(av) av.textContent = (backend === "supabase" && sesion && sesion.email ? sesion.email : "Finanzas").trim().charAt(0).toUpperCase();
   actualizarInsignias(); sincronizarTema();
@@ -3955,20 +3945,8 @@ async function mostrarAceptaciones(){
     cont.innerHTML = '<div class="vacio">No se pudo cargar el registro. Revisa tu conexión.</div>';
   }
 }
-async function cerrarSesionApp(){
-  if(backend === "supabase" && tocado){
-    await sincronizarSalida();
-    if(tocado && !confirm("Hay cambios que todavía no se han subido a la nube. Se conservan en este dispositivo y se subirán cuando vuelvas a entrar con esta misma cuenta. ¿Salir ahora?")) return;
-  }
-  volcarLocal();
-  await salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); escribirJson(CLAVE_ACTIVIDAD, null); tocado = false;
-  estado = semillaEstado(); sincronizarControles(); render();
-  setEstadoGuardado("");
-  mostrarAcceso("");
-}
 function montarMenu(){
   const d = document.getElementById("dlg-config");
-  const bs = document.getElementById("btn-salir-lado"); if(bs) bs.addEventListener("click", cerrarSesionApp);
   ["btn-menu","btn-menu-lado"].forEach(id => { const b = document.getElementById(id); if(b) b.addEventListener("click", abrirConfig); });
   document.getElementById("config-contenido").addEventListener("click", async e => {
     const b = e.target.closest("button[data-acc]");
@@ -3992,7 +3970,17 @@ function montarMenu(){
     if(acc === "aceptaciones") await mostrarAceptaciones();
     if(acc === "entrar"){ escribirJson(CLAVE_SOLO_LOCAL, null); mostrarAcceso(""); }
     if(acc === "cambiar-clave") abrirCambiarClave(false);
-    if(acc === "salir") await cerrarSesionApp();
+    if(acc === "salir"){
+      if(backend === "supabase" && tocado){
+        await sincronizarSalida();
+        if(tocado && !confirm("Hay cambios que todavía no se han subido a la nube. Se conservan en este dispositivo y se subirán cuando vuelvas a entrar con esta misma cuenta. ¿Salir ahora?")) return;
+      }
+      volcarLocal();
+      await salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); escribirJson(CLAVE_ACTIVIDAD, null); tocado = false;
+      estado = semillaEstado(); sincronizarControles(); render();
+      setEstadoGuardado("");
+      mostrarAcceso("");
+    }
     if(acc === "tema"){
       const actual = document.documentElement.getAttribute("data-theme");
       const oscuroAhora = actual ? actual === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
