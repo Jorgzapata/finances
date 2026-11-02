@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-dRjzHi9Jv5KtNzosZ50MCH7cp+6qCJvqcmJmGMJ8I6s=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Yeq/oJDEoSTqom3iSYGGS0+EusO4xSVX3LhTfZb87/w=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -137,16 +137,6 @@ html,body{overflow-x:clip}
   .lado-toggle:focus-visible{outline:2px solid var(--azul); outline-offset:2px}
   .lado-toggle .ico{width:16px; height:16px; transition:transform .22s}
   .app-shell:not(.lado-min) .lado-toggle .ico{transform:rotate(180deg)}
-  .lado-min .sidebar{overflow:visible; align-items:center; padding-left:14px; padding-right:14px}
-  .lado-min .sidebar > *{width:100%}
-  .lado-min .etq,.lado-min .lado-legal,.lado-min .periodo-lado,.lado-min #btn-hoy-lado,.lado-min .nav-etq,.lado-min .marca-app > span:not(.logo){display:none!important}
-  .lado-min .nav-lado hr{display:block}
-  .lado-min .marca-app{justify-content:center; padding:0}
-  .lado-min .nav-lado,.lado-min .lado-pie{align-items:center}
-  .lado-min .nav-item,.lado-min #btn-nuevo-lado{justify-content:center; width:48px; height:48px; padding:0; gap:0}
-  .lado-min #btn-nuevo-lado{border-radius:50%}
-  .lado-min .nav-item[aria-current="true"]::before{left:-14px}
-  .lado-min .nav-item.periodo-min{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:0; width:48px; height:48px; padding:0; border-radius:var(--r-md); background:var(--surface-2); font-size:11px; font-weight:700; line-height:1.15; color:var(--ink-2); border:0; cursor:pointer}
   .lado-min .estado{font-size:0; gap:0; padding:0!important; align-self:center}
   .lado-min .estado::before{width:9px; height:9px}
   .lado-min [data-tip]{position:relative}
@@ -187,10 +177,6 @@ html,body{overflow-x:clip}
 .uc-txt{display:flex; flex-direction:column; min-width:0; gap:1px}
 .uc-txt strong{font-size:13px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
 @media (min-width:900px){
-  .lado-min .lado-busca{width:48px; height:48px; padding:0; justify-content:center}
-  .lado-min .lado-busca input{display:none}
-  .lado-min .lado-usuario{width:48px; height:48px; padding:0; justify-content:center; background:none}
-  .lado-min .insignia{position:absolute; top:7px; right:7px; margin:0; min-width:0; width:9px; height:9px; padding:0; font-size:0; background:var(--clay)}
 }
 
 /* cabecera móvil */
@@ -442,7 +428,7 @@ dialog{
   width:min(540px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); box-shadow:var(--shadow-alta);
 }
 dialog::backdrop{background:rgba(4,20,16,.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px)}
-dialog[open]{animation:aparecer .18s ease-out; display:flex; flex-direction:column}
+dialog[open]{display:flex; flex-direction:column}
 dialog > form, dialog > .dlg-cuerpo{min-height:0}
 @keyframes aparecer{from{opacity:0; transform:translateY(8px) scale(.99)}to{opacity:1; transform:none}}
 .dlg-cab{display:flex; align-items:flex-start; justify-content:space-between; gap:var(--s3); padding:var(--s5) var(--s5) 0}
@@ -455,7 +441,6 @@ dialog > form, dialog > .dlg-cuerpo{min-height:0}
 @media (max-width:640px){
   /* en celular los diálogos salen desde abajo, como una hoja */
   dialog{width:100vw; max-width:100vw; margin:auto 0 0; border-radius:var(--r-lg) var(--r-lg) 0 0; max-height:92dvh; padding-bottom:env(safe-area-inset-bottom,0px)}
-  dialog[open]{animation:subir .22s ease-out}
   @keyframes subir{from{transform:translateY(40px); opacity:.4}to{transform:none; opacity:1}}
   .rejilla-2{grid-template-columns:1fr}
   .dlg-pie{flex-wrap:wrap}
@@ -756,6 +741,108 @@ body.sincronizando #fab,body.sincronizando #btn-nuevo-lado{opacity:.55; transiti
 .btn-hoy[hidden]{display:none}
 .periodo-movil{align-items:center}
 @media (max-width:380px){ .top-in .titulo-vista, .top-in .marca-app > span:not(.logo){display:none} .btn-hoy{padding:0 9px} }
+
+/* ============ MOVIMIENTO: mismas curvas y tiempos en toda la app ============ */
+:root{
+  --ease-out:cubic-bezier(.22,1,.36,1); --ease-soft:cubic-bezier(.32,.72,0,1); --ease-in:cubic-bezier(.5,0,.75,0);
+  --d-rapida:140ms; --d-media:260ms; --d-lenta:420ms;
+  --muelle:linear(0,.009,.035 2.1%,.141 4.4%,.723 12.9%,.938 16.7%,1.017 20.5%,1.077 25.6%,1.1 29.2%,1.085 32.7%,1.015 41%,.99 46.6%,.998 52.8%,1);
+}
+@keyframes vista-in{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+@keyframes pop-in{from{opacity:0; transform:scale(.4)}to{opacity:1; transform:none}}
+@keyframes pop-in-b{from{opacity:0; transform:scale(.4)}to{opacity:1; transform:none}}
+@keyframes tip-in{from{opacity:0; transform:translate(-6px,-50%)}to{opacity:1; transform:translate(0,-50%)}}
+@keyframes aviso-in{from{opacity:0; transform:translateY(18px) scale(.95)}to{opacity:1; transform:none}}
+.entra > *{animation:vista-in var(--d-lenta) var(--ease-out) backwards}
+.entra > :nth-child(2){animation-delay:40ms} .entra > :nth-child(3){animation-delay:80ms} .entra > :nth-child(4){animation-delay:120ms}
+.entra > :nth-child(5){animation-delay:160ms} .entra > :nth-child(6){animation-delay:200ms} .entra > :nth-child(n+7){animation-delay:240ms}
+.cat-panel{animation:vista-in var(--d-media) var(--ease-out)}
+.aviso-flot{animation:aviso-in .5s var(--muelle)}
+
+/* diálogos: entran con un resorte corto y salen más rápido de lo que entraron */
+dialog{opacity:0; transform:translateY(16px) scale(.97);
+  transition:opacity var(--d-rapida) var(--ease-in), transform var(--d-rapida) var(--ease-in), overlay var(--d-rapida) allow-discrete, display var(--d-rapida) allow-discrete}
+dialog[open]{opacity:1; transform:none;
+  transition:opacity var(--d-media) var(--ease-out), transform .46s var(--muelle), overlay var(--d-media) allow-discrete, display var(--d-media) allow-discrete}
+@starting-style{ dialog[open]{opacity:0; transform:translateY(16px) scale(.97)} }
+dialog::backdrop{opacity:0; transition:opacity var(--d-media) var(--ease-out), overlay var(--d-media) allow-discrete, display var(--d-media) allow-discrete}
+dialog[open]::backdrop{opacity:1}
+@starting-style{ dialog[open]::backdrop{opacity:0} }
+@media (max-width:640px){
+  dialog{transform:translateY(100%); opacity:1}
+  dialog[open]{transform:none; transition:transform .5s var(--ease-soft), overlay .3s allow-discrete, display .3s allow-discrete}
+  @starting-style{ dialog[open]{transform:translateY(100%)} }
+}
+
+/* botones y tarjetas: presión con resorte, sin saltos */
+.btn{transition:background var(--d-rapida) var(--ease-out), box-shadow var(--d-rapida), filter var(--d-rapida), transform var(--d-media) var(--muelle), color var(--d-rapida)}
+.btn:active:not(:disabled){transform:scale(.97)}
+.cat-tile,.mov-card,.fila-config,.cat-chip{transition:background var(--d-rapida), border-color var(--d-rapida), box-shadow var(--d-media) var(--ease-out), transform var(--d-media) var(--muelle)}
+.cat-tile:hover{transform:translateY(-2px)} .cat-tile:active,.cat-chip:active{transform:scale(.97)}
+.interruptor,.interruptor::after{transition-timing-function:var(--ease-soft)}
+.interruptor::after{transition:transform .38s var(--muelle)}
+#fab{transition:transform var(--d-media) var(--muelle), box-shadow var(--d-media)} #fab:active{transform:scale(.9)}
+.barra-inf button .ico{transition:transform var(--d-media) var(--muelle)} .barra-inf button:active .ico{transform:scale(.86)}
+.rango button{transition:background var(--d-rapida), color var(--d-rapida), transform var(--d-media) var(--muelle)}
+details{interpolate-size:allow-keywords}
+details::details-content{block-size:0; opacity:0; overflow:clip; transition:block-size var(--d-media) var(--ease-soft), opacity var(--d-media) var(--ease-out), content-visibility var(--d-media) allow-discrete}
+details[open]::details-content{block-size:auto; opacity:1}
+.res-card summary::after{transition:transform var(--d-media) var(--ease-soft)}
+
+/* ============ SIDEBAR: un solo diseño que se estira (los íconos no se mueven) ============ */
+@media (min-width:900px){
+  .sidebar{padding:var(--s5) 18px; overflow-x:hidden; overflow-y:auto; transition:width var(--d-lenta) var(--ease-soft)}
+  .lado-min .sidebar{overflow:visible}
+  .lado-anim .sidebar{overflow:hidden}
+  .lado-quieto .sidebar,.lado-quieto .sidebar *,.lado-quieto .lado-toggle{transition:none!important}
+  .lado-toggle{transition:left var(--d-lenta) var(--ease-soft), background var(--d-rapida)}
+  .lado-toggle .ico{transition:transform var(--d-lenta) var(--ease-soft)}
+
+  /* textos: siempre en una línea; se recortan en vez de partirse */
+  .sidebar .etq,.sidebar .etq-marca{white-space:nowrap; overflow:hidden; max-width:220px; opacity:1;
+    transition:max-width var(--d-lenta) var(--ease-soft), opacity var(--d-media) var(--ease-out) 90ms}
+  .lado-min .sidebar .etq,.lado-min .sidebar .etq-marca{max-width:0; opacity:0; transition:max-width var(--d-lenta) var(--ease-soft), opacity 100ms var(--ease-in)}
+
+  .sidebar .marca-app{padding:0 6px; gap:12px; transition:gap var(--d-lenta) var(--ease-soft)}
+  .lado-min .sidebar .marca-app{gap:0}
+  .sidebar .lado-busca{height:48px; padding:0 0 0 12px; gap:0}
+  .sidebar .lado-busca input{max-width:200px; margin-left:8px; opacity:1; transition:max-width var(--d-lenta) var(--ease-soft), margin var(--d-lenta) var(--ease-soft), opacity var(--d-media) var(--ease-out) 90ms}
+  .lado-min .sidebar .lado-busca input{max-width:0; margin-left:0; opacity:0; visibility:hidden; transition:max-width var(--d-lenta) var(--ease-soft), margin var(--d-lenta) var(--ease-soft), opacity 100ms, visibility 0s .2s}
+  .sidebar .lado-busca kbd{margin-right:10px; transition:max-width var(--d-lenta) var(--ease-soft), margin var(--d-lenta) var(--ease-soft), opacity var(--d-media) var(--ease-out) 90ms}
+  .lado-min .sidebar .lado-busca kbd{margin-right:0}
+
+  .sidebar #btn-nuevo-lado{height:48px; padding:0 0 0 12px; gap:12px; justify-content:flex-start; border-radius:var(--r-pill); transition:gap var(--d-lenta) var(--ease-soft), background var(--d-rapida), transform var(--d-media) var(--muelle), box-shadow var(--d-rapida)}
+  .lado-min .sidebar #btn-nuevo-lado{gap:0}
+  .sidebar .nav-item,.sidebar   .lado-min .sidebar .nav-item,.lado-min .sidebar   .sidebar .nav-item:active,.sidebar   .sidebar .nav-item[aria-current="true"]::before{left:-18px; transition:top var(--d-media) var(--ease-soft), bottom var(--d-media) var(--ease-soft)}
+  .sidebar .nav-item .ico,.sidebar 
+  .sidebar .nav-etq{max-height:40px; opacity:1; overflow:hidden; transition:max-height var(--d-lenta) var(--ease-soft), padding var(--d-lenta) var(--ease-soft), opacity var(--d-media) var(--ease-out) 90ms}
+  .lado-min .sidebar .nav-etq{max-height:0; opacity:0; padding-top:0; padding-bottom:0; transition:max-height var(--d-lenta) var(--ease-soft), padding var(--d-lenta) var(--ease-soft), opacity 100ms}
+  .sidebar .nav-lado hr{display:block; height:0; margin:0 auto; opacity:0; transition:margin var(--d-lenta) var(--ease-soft), opacity var(--d-media)}
+  .lado-min .sidebar .nav-lado hr{margin:var(--s2) auto; opacity:1}
+
+  .sidebar .lado-pie{gap:0}
+  .sidebar .lado-pie > *{margin-top:8px}
+  .sidebar .lado-pie > .periodo-min{margin-top:0}
+  .sidebar .periodo-lado{max-height:56px; overflow:hidden; opacity:1; transition:max-height var(--d-lenta) var(--ease-soft), margin var(--d-lenta) var(--ease-soft), opacity var(--d-media) var(--ease-out) 90ms}
+  .lado-min .sidebar .periodo-lado{max-height:0; margin-top:0; opacity:0; transition:max-height var(--d-lenta) var(--ease-soft), margin var(--d-lenta) var(--ease-soft), opacity 100ms}
+  .sidebar .periodo-min{display:flex!important; flex-direction:column; align-items:center; justify-content:center; gap:0; padding:0; width:48px; height:48px; max-height:0; opacity:0; overflow:hidden; border-radius:var(--r-md); background:var(--surface-2); font-size:11px; font-weight:700; line-height:1.15; color:var(--ink-2); border:0; cursor:pointer; transition:max-height var(--d-lenta) var(--ease-soft), margin var(--d-lenta) var(--ease-soft), opacity var(--d-media) var(--ease-out)}
+  .lado-min .sidebar .periodo-min{max-height:48px; margin-top:8px; opacity:1}
+  .lado-min .sidebar #btn-hoy-lado{display:none}
+  .sidebar .lado-usuario{height:48px; padding:6px; gap:12px; transition:gap var(--d-lenta) var(--ease-soft), background var(--d-media)}
+  .lado-min .sidebar .lado-usuario{gap:0; background:transparent}
+  .sidebar .lado-legal{max-height:48px; overflow:hidden; opacity:1; transition:max-height var(--d-lenta) var(--ease-soft), margin var(--d-lenta) var(--ease-soft), opacity var(--d-media) var(--ease-out) 90ms}
+  .lado-min .sidebar .lado-legal{max-height:0; margin-top:0; opacity:0; transition:max-height var(--d-lenta) var(--ease-soft), margin var(--d-lenta) var(--ease-soft), opacity 100ms}
+  .sidebar .insignia{animation:pop-in .4s var(--muelle)}
+  .lado-min .sidebar .insignia{animation-name:pop-in-b; position:absolute; top:8px; right:8px; margin:0; min-width:0; width:9px; height:9px; padding:0; font-size:0; background:var(--clay)}
+  .lado-min [data-tip]:hover::after,.lado-min [data-tip]:focus-visible::after{animation:tip-in .2s var(--ease-out) .3s backwards}
+}
+@media (min-width:900px) and (max-height:900px){
+  .sidebar{padding-top:var(--s4); padding-bottom:var(--s4); gap:var(--s2)}
+  .sidebar .lado-pie > *{margin-top:4px} .lado-min .sidebar .periodo-min{margin-top:4px}
+  .sidebar .nav-item,.sidebar   .sidebar .lado-busca,.sidebar #btn-nuevo-lado,.sidebar .lado-usuario{height:44px}
+  .sidebar .nav-lado{gap:0}
+}
+@media (min-width:900px) and (max-height:780px){ .lado-min .sidebar{overflow-y:auto} }
 </style>
 </head>
 <body class="ph-no-capture fs-exclude" data-private="true">
@@ -2045,7 +2132,7 @@ async function adoptarRemoto(traer){
   setEstadoGuardado(tocado ? "Guardando…" : "Sincronizado");
   cargaInicial = false;
   document.body.classList.remove("sincronizando");
-  renderSeguro();
+  renderSeguro(); animarVista();
   if(tocado){ cambios++; await sincronizarSalida(); }
 }
 
@@ -2162,7 +2249,7 @@ async function cargarDeNube(inicial){
     const eraInicial = cargaInicial;
     cargaInicial = false;
     document.body.classList.remove("sincronizando");
-    if(eraInicial) render();
+    if(eraInicial){ render(); animarVista(); }
   }
 }
 async function iniciarSync(){
@@ -3264,9 +3351,17 @@ function render(){
   actualizarInsignias(); sincronizarTema();
   window.scrollTo(0, y);
 }
+let tEntra = 0;
+function animarVista(){
+  const c = document.getElementById("vista"); if(!c) return;
+  c.classList.remove("entra"); void c.offsetWidth; c.classList.add("entra");
+  clearTimeout(tEntra); tEntra = setTimeout(() => c.classList.remove("entra"), 900);
+}
 function irA(v){
   if(!VISTAS.some(x => x && x[0] === v)) return;
+  const cambia = v !== vista;
   vista = v; moviendoCat = null; render(); window.scrollTo(0, 0);
+  if(cambia) animarVista();
 }
 function sincronizarControles(){
   const pmt = document.getElementById("periodo-min-txt");
@@ -3279,8 +3374,16 @@ function sincronizarControles(){
 
 /* ============ eventos ============ */
 const CLAVE_LADO = CLAVE_LOCAL + ":lado-min";
+let tLado = 0;
 function aplicarLado(min, guardar){
   const sh = document.querySelector(".app-shell"); if(!sh) return;
+  if(guardar){
+    sh.classList.add("lado-anim"); clearTimeout(tLado);
+    tLado = setTimeout(() => sh.classList.remove("lado-anim"), 520);
+  }else{
+    sh.classList.add("lado-quieto");
+    requestAnimationFrame(() => requestAnimationFrame(() => sh.classList.remove("lado-quieto")));
+  }
   sh.classList.toggle("lado-min", !!min);
   const b = document.getElementById("btn-lado");
   if(b){ const t = min ? "Ampliar menú" : "Esconder menú"; b.setAttribute("aria-expanded", String(!min)); b.setAttribute("aria-label", t); b.title = t; }
@@ -3324,7 +3427,7 @@ function montarLado(){
     });
     inp.addEventListener("blur", () => { if(!inp.value) filtrarMenu(""); });
   }
-  const enfocarBusca = () => { aplicarLado(false, true); setTimeout(() => { if(inp) inp.focus(); }, 240); };
+  const enfocarBusca = () => { aplicarLado(false, true); setTimeout(() => { if(inp) inp.focus(); }, 460); };
   if(bi) bi.addEventListener("click", enfocarBusca);
   document.addEventListener("keydown", e => {
     if((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k" && window.innerWidth >= 900 && document.querySelector(".app-shell") && !document.querySelector("dialog[open]")){
@@ -3945,6 +4048,17 @@ async function mostrarAceptaciones(){
     cont.innerHTML = '<div class="vacio">No se pudo cargar el registro. Revisa tu conexión.</div>';
   }
 }
+async function cerrarSesionApp(){
+  if(backend === "supabase" && tocado){
+    await sincronizarSalida();
+    if(tocado && !confirm("Hay cambios que todavía no se han subido a la nube. Se conservan en este dispositivo y se subirán cuando vuelvas a entrar con esta misma cuenta. ¿Salir ahora?")) return;
+  }
+  volcarLocal();
+  await salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); escribirJson(CLAVE_ACTIVIDAD, null); tocado = false;
+  estado = semillaEstado(); sincronizarControles(); render();
+  setEstadoGuardado("");
+  mostrarAcceso("");
+}
 function montarMenu(){
   const d = document.getElementById("dlg-config");
   ["btn-menu","btn-menu-lado"].forEach(id => { const b = document.getElementById(id); if(b) b.addEventListener("click", abrirConfig); });
@@ -3970,17 +4084,7 @@ function montarMenu(){
     if(acc === "aceptaciones") await mostrarAceptaciones();
     if(acc === "entrar"){ escribirJson(CLAVE_SOLO_LOCAL, null); mostrarAcceso(""); }
     if(acc === "cambiar-clave") abrirCambiarClave(false);
-    if(acc === "salir"){
-      if(backend === "supabase" && tocado){
-        await sincronizarSalida();
-        if(tocado && !confirm("Hay cambios que todavía no se han subido a la nube. Se conservan en este dispositivo y se subirán cuando vuelvas a entrar con esta misma cuenta. ¿Salir ahora?")) return;
-      }
-      volcarLocal();
-      await salirSesion(); backend = "local"; escribirJson(CLAVE_SOLO_LOCAL, null); escribirJson(CLAVE_ACTIVIDAD, null); tocado = false;
-      estado = semillaEstado(); sincronizarControles(); render();
-      setEstadoGuardado("");
-      mostrarAcceso("");
-    }
+    if(acc === "salir") await cerrarSesionApp();
     if(acc === "tema"){
       const actual = document.documentElement.getAttribute("data-theme");
       const oscuroAhora = actual ? actual === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
