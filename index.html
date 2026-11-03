@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Bu9oeMUG6QE+OYMxlQDvcZfG7sVKhVwDZ4LRgqelqz0=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-o+eqxieftW3lRSKX+h5ktyZlD33x8wm90qoTnzMN56E=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -4008,7 +4008,7 @@ function icoTipo(tipo, tam){
 }
 let heroVista = "disp", minDona = false, minES = false;
 let verValores = true; try{ verValores = localStorage.getItem(CLAVE_LOCAL + ":ver-valores") !== "0"; }catch(_){}
-const vm = t => verValores ? t : "000";
+const vm = t => verValores ? t : "**";
 let grafAncho = 0, grafAlto = 0, grafObs = null, grafObservado = null, grafRAF = 0;
 function ajustarGraf(){
   const caja = document.querySelector("#graf-es .graf-caja"); if(!caja) return;
@@ -4105,7 +4105,7 @@ function vistaPanel(){
         <div class="tot"><dt>Disponible</dt><dd>${M(mt.disponible)}</dd></div>
       </dl>
     </div></div>
-    <div class="hero-valor ${heroItems[heroVista].neg ? "neg" : ""}" id="hero-valor" aria-label="${esc(heroItems[heroVista].etq)} ${verValores ? heroItems[heroVista].val : "oculto"}">${vm(heroItems[heroVista].val)}</div>
+    <div class="hero-valor ${heroItems[heroVista].neg ? "neg" : ""}" id="hero-valor" data-real="${esc(heroItems[heroVista].val)}" aria-label="${esc(heroItems[heroVista].etq)} ${verValores ? heroItems[heroVista].val : "oculto"}">${vm(heroItems[heroVista].val)}</div>
     <div class="hero-chips">
       ${[heroVista === "ant" ? "disp" : "ant", heroVista === "act" ? "disp" : "act"].map(k => `<button type="button" class="hero-chip" data-hero-sw="${k}" aria-label="Ver ${esc(heroItems[k].etq)} en grande"><span>${esc(heroItems[k].etq)}</span><b>${vm(heroItems[k].val)}</b></button>`).join("")}
       <button type="button" class="hero-chip" data-hero-ir="movimientos"><span>Movimientos</span><b>${mt.n}</b></button>
@@ -4786,8 +4786,12 @@ function ajustarHero(){
   const caja = el.parentElement; const cs = getComputedStyle(caja);
   const disp = caja.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
   const movil = innerWidth < 900;
+  /* el tamaño se calcula con el valor real, así ocultarlo no cambia la altura de la tarjeta */
+  const mostrado = el.textContent, real = el.dataset.real;
+  if(real) el.textContent = real;
   el.style.fontSize = "100px"; el.style.width = "max-content";
   const w = el.scrollWidth || 1;
+  if(real) el.textContent = mostrado;
   const objetivo = movil ? disp : Math.min(disp, 560);
   el.style.fontSize = Math.max(26, Math.min(movil ? 72 : 84, 100 * objetivo / w)).toFixed(1) + "px";
 }
