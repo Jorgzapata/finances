@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-7ilKtgx0RhwrIet5qHeWBMqyT37oQCmxDNMNEu/PUM8=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-VCmRF841PAArUCH1SbQX4KsvfG/eWZA74WkZlzA8Xs0=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -499,12 +499,11 @@ a.fila-config{text-decoration:none}
 .solo-escritorio{display:none!important}
 /* computador: panel de marca a la izquierda y formulario a la derecha */
 @media (min-width:900px){
-  .acc-layout{grid-template-columns:minmax(400px,560px) minmax(0,1fr); gap:var(--s4); padding:var(--s4); min-height:100vh; min-height:100dvh; box-sizing:border-box}
-  .acc-panel{display:flex; flex-direction:column; position:sticky; top:var(--s4); height:calc(100dvh - 2 * var(--s4)); min-height:620px; box-sizing:border-box; border-radius:24px; background:var(--hero-2); color:#fff; padding:var(--s6) 44px; overflow:hidden}
-  .acc-caja{align-self:center; padding:var(--s6) var(--s5)}
-  .acc-marca-movil,.acc-caja .acc-legal{display:none}
+  .acc-caja{justify-content:center; max-width:460px}
+  .acc-bienv{font-size:clamp(44px,4.2vw,56px)!important}
   .solo-movil{display:none!important}
   .solo-escritorio{display:inline-flex!important}
+}
 }
 .acc-panel-marca{display:flex; align-items:center; gap:12px; font-weight:700; font-size:19px; letter-spacing:-.02em}
 .acc-logo{width:40px; height:40px; border-radius:11px; background:var(--acento); color:var(--hero-2); display:grid; place-items:center; flex-shrink:0}
@@ -1173,7 +1172,7 @@ dialog.dlg-factura::backdrop{background:rgba(4,20,16,.62)}
 .acc-enlaces .btn.texto:hover{background:var(--line-soft); color:var(--ink)}
 .acc-enlaces .btn.texto[hidden]{display:none}
 .acc-enlaces:has(#acc-olvide[hidden]){grid-template-columns:1fr}
-@media (max-width:899px){
+@media all{
   .acc-caja{padding-top:calc(22px + env(safe-area-inset-top,0px)); padding-bottom:calc(14px + env(safe-area-inset-bottom,0px)); min-height:100dvh; box-sizing:border-box}
   .acc-caja .marca-app.acc-marca-movil{align-self:center; margin:0 0 14px}
   .acc-marca-movil .logo{width:44px; height:44px}
@@ -1193,7 +1192,7 @@ dialog.dlg-factura::backdrop{background:rgba(4,20,16,.62)}
   .acc-legal{margin-top:10px} .acc-local{margin-top:6px; font-size:13px; padding:4px 8px}
   .checks-acceso{gap:10px}
 }
-@media (max-height:700px) and (max-width:899px){.pin-cajas span{height:54px; font-size:26px} .acc-bienv{font-size:30px}}
+@media (max-height:700px){.pin-cajas span{height:54px; font-size:26px} .acc-bienv{font-size:30px}}
 @media (prefers-reduced-motion:reduce){.acc-bienv .pal{animation:none; opacity:1; filter:none; transform:none}}
 
 /* carga: bloques con la forma de lo que viene, con un barrido de luz suave */
@@ -2748,7 +2747,7 @@ function pintarBienvenida(){
   h.setAttribute("aria-label", texto);
   h.innerHTML = texto.split(" ").map((p, i) => '<span class="pal" aria-hidden="true" style="--i:' + i + '">' + esc(p) + "</span>").join(" ");
   const caja = h.closest(".acc-caja");
-  const movil = typeof matchMedia === "function" && matchMedia("(max-width:899px)").matches && !matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const movil = typeof matchMedia === "function" && !matchMedia("(prefers-reduced-motion:reduce)").matches;
   clearTimeout(bienvT);
   if(!bienvVista && movil && caja){
     bienvVista = true;
