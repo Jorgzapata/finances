@@ -1583,16 +1583,14 @@ dialog::backdrop{background:rgba(4,20,16,.6)}
 @keyframes esq-pulso{0%,100%{opacity:1}50%{opacity:.4}}
 @media (prefers-reduced-motion:reduce){.esq{animation:none}}
 /* interruptor de tema = botón de ícono (theme-switch) */
-.nav-item.tema-btn{width:38px; height:38px; min-height:38px; padding:0; justify-content:center; gap:0; border-radius:var(--r-md); background:var(--surface-2); border:1px solid var(--line-soft); color:var(--ink-2); margin:2px 0}
 .tema-btn .ico-tema{display:grid; place-items:center}
-.tema-btn .morph{width:18px; height:18px; transition:transform .25s var(--muelle)}
+.tema-btn .morph,.lado-tema .ico-tema .morph{width:20px; height:20px; transition:transform .25s var(--muelle)}
 .tema-btn .morph > svg{transition:opacity .3s var(--ease-out), transform .55s var(--muelle), filter .3s}
 .tema-btn .morph > svg:first-child{transform:none}
 .tema-btn .morph > svg:last-child{transform:rotate(-80deg) scale(.4) translateY(6px)}
 .tema-btn .morph.on > svg:first-child{transform:rotate(80deg) scale(.4) translateY(-6px)}
 .tema-btn .morph.on > svg:last-child{transform:none}
 .tema-btn:active .morph{transform:scale(.86)}
-@media (hover:hover) and (pointer:fine){.nav-item.tema-btn:hover{background:var(--line)}}
 .nav-item.tema-btn:focus-visible{outline:2px solid var(--azul); outline-offset:2px}
 @media (prefers-reduced-motion:reduce){.tema-btn .morph > svg{transition:opacity .1s; filter:none}}
 /* botones deshabilitados por condición faltante (aria-disabled: siguen enfocables y dicen qué falta) */
@@ -1607,6 +1605,9 @@ dialog::backdrop{background:rgba(4,20,16,.6)}
 .dlg-pie .btn.primario[aria-disabled="true"]{background:var(--surface-2); color:var(--suave)}
 .campo{font-weight:500; color:var(--suave); gap:8px}
 .campo input,.campo select,.campo textarea{min-height:40px; font-size:14px; font-weight:500; color:var(--ink)}
+
+/* p42 */
+.sidebar .lado-pie > .per-btn.tema-btn{margin-top:6px}
 </style>
 </head>
 <body class="ph-no-capture fs-exclude" data-private="true">
@@ -1733,7 +1734,7 @@ dialog::backdrop{background:rgba(4,20,16,.6)}
         <label class="sr" for="sel-anio-lado">Año</label><input id="sel-anio-lado" class="ctrl pill" type="number" min="2000" max="2100" step="1" inputmode="numeric">
       </div>
       <button type="button" class="btn chico ancho" id="btn-hoy-lado" hidden>Ir al mes actual</button></div>
-      <button type="button" class="nav-item lado-tema tema-btn" id="lado-tema" aria-pressed="false" aria-label="Cambiar a modo noche" data-tip="Modo noche"><span class="ico-tema"></span></button>
+      <button type="button" class="nav-item per-btn lado-tema tema-btn" id="lado-tema" aria-pressed="false" aria-label="Cambiar a modo noche" data-tip="Cambiar tema"><span class="ico-tema per-ic"></span><span class="etq">Cambiar tema</span></button>
       <button type="button" class="lado-usuario" id="btn-menu-lado" data-tip="Configuración"><span class="avatar" id="lado-avatar" aria-hidden="true">F</span><span class="etq uc-txt"><strong id="lado-quien">Tu dinero, en orden</strong><span class="estado" id="estado-guardado-lado"></span></span></button>
       <nav class="lado-legal" aria-label="Documentos legales">
         <a href="terminos.html" target="_blank" rel="noopener">Términos</a>
