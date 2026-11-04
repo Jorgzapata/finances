@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-m5i9ZgK4u2X9LSLEqvbdoP725QSKcLtKVJp5UDi7Auc=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-pa52F1rQ1SjtGYJ1fKKsSYvRqdktwsyILh9j8Rdieik=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -2460,6 +2460,7 @@ function sanear(e){
       categoriaId: limpiarTexto(m.categoriaId, 64), descripcion: limpiarTexto(m.descripcion, LIM.descripcion),
       monto: montoValido(m.monto), metodo: METODOS_VALIDOS.includes(m.metodo) ? m.metodo : "",
       cuentaId: m.cuentaId ? limpiarTexto(m.cuentaId, 64) : null,
+      credito: m.credito === true && m.tipo !== "Ingresos", tarjetaId: (m.credito === true && m.tarjetaId) ? limpiarTexto(m.tarjetaId, 64) : null,
       notas: limpiarTexto(m.notas, LIM.notas), ejemplo: m.ejemplo === true, mod: modDe(m),
       moneda: (COD_MONEDA.includes(m.moneda) && m.moneda !== (COD_MONEDA.includes(e.monedaBase) ? e.monedaBase : "COP")) ? m.moneda : "",
       montoOriginal: montoValido(m.montoOriginal),
@@ -3400,7 +3401,22 @@ function pintarBienvenida(intro){
     /* primero solo el mensaje; cuando termina de salir, aparece el formulario */
     clearTimeout(tIntro);
     const reducido = window.matchMedia && matchMedia("(prefers-reduced-motion:reduce)").matches;
-    tIntro = setTimeout(() => { caja.dataset.fase = "form"; enfocarAcceso(); }, reducido ? 1400 : k * 140 + 1100 + 650);
+    tIntro = setTimeout(() => {
+      /* el logo no salta: se desliza desde donde estaba (centro) hasta su lugar en el formulario */
+      const logo = caja.querySelector(".acc-marca-movil");
+      const antes = logo ? logo.getBoundingClientRect() : null;
+      caja.dataset.fase = "form";
+      if(logo && antes && !reducido){
+        const despues = logo.getBoundingClientRect(), dy = antes.top - despues.top;
+        if(Math.abs(dy) > 1){
+          logo.style.transition = "none"; logo.style.transform = "translateY(" + dy + "px)"; logo.style.willChange = "transform";
+          void logo.offsetWidth;
+          logo.style.transition = "transform .75s cubic-bezier(.22,1,.36,1)"; logo.style.transform = "none";
+          setTimeout(() => { logo.style.transition = ""; logo.style.transform = ""; logo.style.willChange = ""; }, 800);
+        }
+      }
+      setTimeout(enfocarAcceso, reducido ? 0 : 500);
+    }, reducido ? 1400 : k * 140 + 1100 + 650);
   }
 }
 function enfocarAcceso(){
@@ -3643,21 +3659,28 @@ function sumaCat(anio, mes, catId){ return movsDe(anio, mes).reduce((s,m) => s +
 function pagadoCat(catId){ return estado.movimientos.reduce((s,m) => s + (m.categoriaId === catId ? m.monto : 0), 0); }
 /* Lo que quedó de los meses anteriores: ingresos menos todo lo que salió
    (gastos, ahorro, deuda e inversión) con fecha anterior al día 1 del mes. */
+/* Compra con tarjeta de crédito: cuenta como gasto de su categoría (presupuesto, resumen) pero NO baja el saldo
+   disponible: la plata sale cuando pagas la tarjeta (un movimiento de Deuda). Mientras tanto sube la deuda de esa tarjeta. */
+const efectoCaja = m => m.tipo === "Ingresos" ? m.monto : (m.credito ? 0 : -m.monto);
+function creditoCat(catId){ return estado.movimientos.reduce((s,m) => s + (m.credito && m.tarjetaId === catId ? m.monto : 0), 0); }
+function deudaCat(c){ return Math.max(0, c.saldoInicial + creditoCat(c.id) - pagadoCat(c.id)); }
+function sumaCredito(anio, mes){ return movsDe(anio, mes).reduce((s,m) => s + (m.credito ? m.monto : 0), 0); }
 function arrastre(anio, mes){
   const corte = anio + "-" + String(mes).padStart(2,"0") + "-01";
-  return estado.movimientos.reduce((s, m) => m.fecha < corte ? s + (m.tipo === "Ingresos" ? m.monto : -m.monto) : s, 0);
+  return estado.movimientos.reduce((s, m) => m.fecha < corte ? s + efectoCaja(m) : s, 0);
 }
 function metricas(anio, mes){
   const t = {};
   TIPOS.forEach(x => t[x] = sumaTipo(anio, mes, x));
   const gastos = t["Gastos Fijos"] + t["Gastos Variables y Ocio"];
   const ahorroInv = t["Ahorro"] + t["Inversión"];
-  const remanente = t["Ingresos"] - gastos - ahorroInv - t["Deuda"];
+  const credito = sumaCredito(anio, mes);
+  const remanente = t["Ingresos"] - gastos - ahorroInv - t["Deuda"] + credito;
   const tasa = t["Ingresos"] > 0 ? ahorroInv / t["Ingresos"] : 0;
-  const deudaPendiente = catsDe("Deuda").reduce((s,c) => s + Math.max(0, c.saldoInicial - pagadoCat(c.id)), 0);
+  const deudaPendiente = catsDe("Deuda").reduce((s,c) => s + deudaCat(c), 0);
   const valorInv = catsDe("Inversión").reduce((s,c) => s + (c.valorActual || 0), 0);
   const anterior = arrastre(anio, mes == null ? 1 : mes);
-  return { t, gastos, ahorroInv, remanente, anterior, disponible: anterior + remanente, tasa, deudaPendiente, valorInv, n: movsDe(anio, mes).length };
+  return { t, gastos, ahorroInv, credito, remanente, anterior, disponible: anterior + remanente, tasa, deudaPendiente, valorInv, n: movsDe(anio, mes).length };
 }
 function sobrePresupuesto(anio, mes){
   return estado.categorias
@@ -4122,6 +4145,7 @@ function vistaPanel(){
       <dl class="hero-cuentas">
         <div><dt>Entró este mes</dt><dd>${M(entro)}</dd></div>
         <div><dt>Salió este mes</dt><dd>${M(salio)}</dd></div>
+        ${mt.credito > 0 ? `<div><dt>Compras a crédito</dt><dd>${M(mt.credito)}</dd></div>` : ""}
         <div><dt>Quedó del mes anterior</dt><dd>${M(mt.anterior)}</dd></div>
         <div class="tot"><dt>Disponible</dt><dd>${M(mt.disponible)}</dd></div>
       </dl>
@@ -4210,7 +4234,7 @@ function kpiLinea(etq, valor, icono){
 /* Celular: movimientos en tarjetas, agrupados por día, con el monto a la derecha */
 function listaMovMovil(lista){
   const neto = {};
-  lista.forEach(m => { neto[m.fecha] = (neto[m.fecha] || 0) + (m.tipo === "Ingresos" ? m.monto : -m.monto); });
+  lista.forEach(m => { neto[m.fecha] = (neto[m.fecha] || 0) + efectoCaja(m); });
   let html = "", dia = null;
   lista.forEach(m => {
     if(m.fecha !== dia){
@@ -4222,7 +4246,8 @@ function listaMovMovil(lista){
     const ing = m.tipo === "Ingresos", cat = nombreCat(m.categoriaId);
     const titulo = m.descripcion || cat, sub = m.descripcion ? cat : m.tipo;
     const cu = m.cuentaId ? cuentaPorId(m.cuentaId) : null;
-    const partesMeta = [m.moneda ? esc(simboloMoneda(m.moneda) + " " + fmtMiles.format(m.montoOriginal) + " " + m.moneda) : "", esc(m.metodo || "")].filter(Boolean);
+    const tj = m.credito && m.tarjetaId ? nombreCat(m.tarjetaId) : "";
+    const partesMeta = [m.moneda ? esc(simboloMoneda(m.moneda) + " " + fmtMiles.format(m.montoOriginal) + " " + m.moneda) : "", m.credito ? '<span class="badge">A crédito' + (tj ? " · " + esc(tj) : "") + "</span>" : esc(m.metodo || "")].filter(Boolean);
     if(cu) partesMeta.push('<span class="mov-cta">' + icoCuenta(cu.icono || "tarjeta", "s14") + "</span>" + esc(cu.nombre));
     const meta = partesMeta.join(" · ");
     html += `<button type="button" class="mov-card" data-editar="${esc(m.id)}" aria-label="Editar: ${esc(titulo)}">
@@ -4243,7 +4268,7 @@ function vistaMovimientos(){
     lista = lista.filter(m => (m.descripcion + " " + nombreCat(m.categoriaId) + " " + m.notas + " " + m.metodo + " " + (nombreCuenta(m.cuentaId) || "")).toLowerCase().includes(q));
   }
   lista.sort((x,y) => x.fecha < y.fecha ? 1 : x.fecha > y.fecha ? -1 : (y.mod || 0) - (x.mod || 0));
-  const total = lista.reduce((s,m) => s + (m.tipo === "Ingresos" ? m.monto : -m.monto), 0);
+  const total = lista.reduce((s,m) => s + efectoCaja(m), 0);
   const hayEjemplos = estado.movimientos.some(m => m.ejemplo);
   const LIMITE_FILAS = 250;
   const totalEncontrados = lista.length;
@@ -4657,8 +4682,8 @@ function vistaCuentas(){
 }
 
 function tarjetaDeuda(c, lista){
-  const pagado = pagadoCat(c.id), saldo = Math.max(0, c.saldoInicial - pagado);
-  const avance = c.saldoInicial > 0 ? Math.min(1, pagado / c.saldoInicial) : null;
+  const pagado = pagadoCat(c.id), compras = creditoCat(c.id), saldo = deudaCat(c);
+  const avance = (c.saldoInicial + compras) > 0 ? Math.min(1, pagado / (c.saldoInicial + compras)) : null;
   return `<article class="tarjeta item" data-card-cat="${esc(c.id)}">
     <div class="item-cab"><i class="punto" style="background:var(--plasma)"></i>${campoNombre("data-cat", c.id, c.nombre, "Nombre de la deuda")}${btnBorrarCat(c)}</div>
     <div class="item-hero">
@@ -4666,6 +4691,7 @@ function tarjetaDeuda(c, lista){
       <div class="der"><small>Pagado</small><strong>${money(pagado)}</strong></div>
     </div>
     ${avance == null ? "" : `<div class="avance-fila"><div class="barra" role="img" aria-label="${pct(avance, 0)} pagado"><i style="width:${(avance * 100).toFixed(1)}%; background:var(--ciruela)"></i></div><span>${pct(avance, 0)}</span></div>`}
+    ${compras > 0 ? `<p class="nota" style="margin:0 0 var(--s3)">Incluye ${money(compras)} en compras hechas con esta tarjeta.</p>` : ""}
     <div class="datos">
       ${cmMonto("Saldo inicial", c.saldoInicial, "data-cat", c.id, "saldoInicial", c.nombre)}
       ${cmMonto("Cuota mensual", c.pagoMensual, "data-cat", c.id, "pagoMensual", c.nombre)}
@@ -4678,7 +4704,7 @@ function vistaDeudas(){
   const cats = catsDe("Deuda");
   const tot = cats.reduce((acc,c) => {
     const pagado = pagadoCat(c.id);
-    acc.inicial += c.saldoInicial; acc.mensual += c.pagoMensual; acc.pagado += pagado; acc.saldo += Math.max(0, c.saldoInicial - pagado);
+    acc.inicial += c.saldoInicial; acc.mensual += c.pagoMensual; acc.pagado += pagado; acc.saldo += deudaCat(c);
     return acc;
   }, {inicial:0, mensual:0, pagado:0, saldo:0});
   return `
@@ -5326,7 +5352,30 @@ function faltaMov(){
   const f = document.getElementById("form-mov"); if(!f) return "";
   if(!(parseMonto(f.monto.value) > 0)) return "Escribe un valor mayor a 0.";
   if(!categoriaElegida()) return "Elige una categoría.";
+  if(modoCredito() && !f.cuentaId.value) return catsDe("Deuda").length ? "Elige la tarjeta con la que pagaste." : "Primero crea tu tarjeta en Deudas.";
   return "";
+}
+/* con método "Tarjeta de crédito" en un gasto, el segundo campo pasa de "Cuenta" a "Tarjeta" (las deudas de tu app) */
+function modoCredito(){
+  const f = document.getElementById("form-mov"); if(!f) return false;
+  const cat = categoriaElegida();
+  return f.metodo.value === "Tarjeta de crédito" && ["Gastos Fijos","Gastos Variables y Ocio"].includes(cat ? cat.tipo : tipoForm());
+}
+function ajustarCampoCuenta(){
+  const sel = document.getElementById("f-cuenta"), lab = document.getElementById("campo-cuenta-mov"); if(!sel || !lab) return;
+  const modo = modoCredito() ? "tarjeta" : "cuenta";
+  if(sel.dataset.modo === modo) return;
+  sel.dataset.modo = modo;
+  const ph = lab.querySelector(".fac-ph");
+  if(modo === "tarjeta"){
+    const ds = catsDe("Deuda");
+    sel.innerHTML = ds.length ? ds.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join("") : '<option value="">Sin tarjetas</option>';
+    const por = ds.find(c => /tarjeta/i.test(c.nombre)) || ds[0]; sel.value = por ? por.id : "";
+    sel.setAttribute("aria-label", "Tarjeta"); if(ph) ph.textContent = "Tarjeta";
+  }else{
+    sel.innerHTML = '<option value="">No aplica</option>' + estado.cuentas.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join("");
+    sel.value = ""; sel.setAttribute("aria-label", "Cuenta"); if(ph) ph.textContent = "Cuenta";
+  }
 }
 function faltaTransf(){
   const f = document.getElementById("form-transferencia"); if(!f) return "";
@@ -5343,6 +5392,7 @@ document.addEventListener("click", e => {
 }, true);
 function actualizarFactura(){
   const f = document.getElementById("form-mov"); if(!f) return;
+  ajustarCampoCuenta();
   const hechos = {
     monto: parseMonto(f.monto.value) > 0,
     nombre: !!f.descripcion.value.trim(),
@@ -5431,9 +5481,9 @@ function marcarVacios(){
     const vacio = sel.selectedIndex < 0 || !sel.value;
     const lab = sel.closest("label"); if(lab) lab.dataset.vacio = vacio ? "1" : "0";
     if(id === "f-cuenta" && lab){
-      const cu = vacio ? null : cuentaPorId(sel.value), sp = lab.querySelector(".fac-cta");
-      if(sp) sp.innerHTML = cu ? icoCuenta(cu.icono || "tarjeta", "s18") : "";
-      lab.classList.toggle("con-ico", !!cu);
+      const tj = sel.dataset.modo === "tarjeta", cu = (vacio || tj) ? null : cuentaPorId(sel.value), sp = lab.querySelector(".fac-cta");
+      if(sp) sp.innerHTML = tj ? ico("Card", "s18") : (cu ? icoCuenta(cu.icono || "tarjeta", "s18") : "");
+      lab.classList.toggle("con-ico", !!cu || (tj && !vacio));
     }
   });
 }
@@ -5474,7 +5524,8 @@ function rellenarMov(id){
     f.fecha.value = m.fecha; marcarTipo(m.tipo); llenarCategoriasForm(m.tipo, m.categoriaId);
     monedaForm = m.moneda || null;
     f.descripcion.value = m.descripcion; f.monto.value = fmtMiles.format(m.moneda ? m.montoOriginal : m.monto); f.metodo.value = m.metodo; f.notas.value = m.notas;
-    f.cuentaId.value = m.cuentaId || "";
+    ajustarCampoCuenta();
+    f.cuentaId.value = m.credito ? (m.tarjetaId || "") : (m.cuentaId || "");
   }else{
     /* La fecha propuesta es HOY (leída del reloj en este instante). Solo si se está
        mirando otro mes se propone el último día de un mes pasado o el día 1 de uno futuro. */
@@ -5486,7 +5537,7 @@ function rellenarMov(id){
     }
     marcarTipo("Gastos Variables y Ocio"); llenarCategoriasForm("Gastos Variables y Ocio", null);
     monedaForm = null;
-    f.descripcion.value = ""; f.monto.value = ""; f.metodo.value = ""; f.notas.value = ""; f.cuentaId.value = "";
+    f.descripcion.value = ""; f.monto.value = ""; f.metodo.value = ""; f.notas.value = ""; ajustarCampoCuenta(); f.cuentaId.value = "";
   }
   pintarMoneda();
   actualizarFactura();
@@ -5501,6 +5552,8 @@ function abrirMov(id){
   if(movEd && movEd.metodo && !listaMetodos.includes(movEd.metodo)) listaMetodos.push(movEd.metodo);   // método antiguo ("Otro"): se conserva al editar
   document.getElementById("f-metodo").innerHTML = '<option value="">Sin especificar</option>' + listaMetodos.map(m => `<option value="${esc(m)}">${esc(m)}</option>`).join("");
   document.getElementById("f-cuenta").innerHTML = '<option value="">No aplica</option>' + estado.cuentas.map(c => `<option value="${esc(c.id)}">${esc(c.nombre)}</option>`).join("");
+  document.getElementById("f-cuenta").dataset.modo = "cuenta";
+  { const ph = document.querySelector("#campo-cuenta-mov .fac-ph"); if(ph) ph.textContent = "Cuenta"; }
   document.getElementById("mov-error").hidden = true;
   document.getElementById("f-div-menu").innerHTML = MONEDAS.map(x => '<li role="option" tabindex="-1" data-m="' + x[0] + '" aria-selected="false"><b>' + x[0] + '</b><span>' + esc(x[1]) + '</span></li>').join("");
   document.getElementById("f-div-menu").hidden = true; document.getElementById("f-div").setAttribute("aria-expanded", "false");
@@ -5586,6 +5639,13 @@ function montarDialogo(){
       cuentaId: cuentaPorId(f.cuentaId.value) ? f.cuentaId.value : null,
       notas: limpiarTexto(f.notas.value, LIM.notas)
     };
+    datos.credito = datos.metodo === "Tarjeta de crédito" && ["Gastos Fijos","Gastos Variables y Ocio"].includes(datos.tipo);
+    datos.tarjetaId = null;
+    if(datos.credito){
+      const tj = catPorId(f.cuentaId.value);
+      if(!tj || tj.tipo !== "Deuda"){ err.textContent = "Elige la tarjeta con la que pagaste."; err.hidden = false; return; }
+      datos.tarjetaId = tj.id; datos.cuentaId = null;
+    }
     if(!datos.monto){ err.textContent = "Escribe un monto mayor a cero."; err.hidden = false; f.monto.focus(); return; }
     if(!datos.categoriaId){ err.textContent = "Elige una categoría."; err.hidden = false; return; }
     if(!editandoId && estado.movimientos.length >= LIM.movimientos){ err.textContent = "Llegaste al máximo de movimientos guardados."; err.hidden = false; return; }
