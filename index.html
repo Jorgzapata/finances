@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-pa52F1rQ1SjtGYJ1fKKsSYvRqdktwsyILh9j8Rdieik=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-a1MC75F6hYv4yNVm6tlGH2kbJ1vil4ZJS0/wzvfg1K0=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -1642,7 +1642,7 @@ dialog::backdrop{background:rgba(4,20,16,.6)}
 #graf-es .min-colapsa{flex:1; min-height:0}
 #graf-es .min-in{flex:1; display:flex; flex-direction:column; min-height:0}
 #graf-es .graf-caja{flex:1; min-height:240px}
-#graf-es .graf-caja svg{position:absolute; inset:0; width:100%; height:100%}
+#graf-es .graf-caja > svg{position:absolute; inset:0; width:100%; height:100%}
 /* tarjetas minimizables (celular) */
 .min-btn{display:none; place-items:center; width:36px; height:36px; margin-left:auto; border:1px solid var(--line-soft); border-radius:var(--r-sm); background:var(--surface); color:var(--ink-2); cursor:pointer; flex:none; transition:background var(--d-rapida), transform var(--d-media) var(--muelle)}
 .min-btn .ico{transition:transform var(--d-lenta) var(--ease-soft)}
@@ -1808,6 +1808,41 @@ path.lc-dib[stroke-dasharray]{stroke-dasharray:1}
 /* p48: contorno al 50% de opacidad */
 .duo-inf .lista-filas > div,.duo-inf .lista-filas > div:first-child,.duo-inf .lista-filas > div:last-child,
 .suma-gran,.consent-bloque,.mon-caja,.mon-aviso,.res-card.tot,.res-card.tot .meses-grid > div,.hoja-mas button{border-color:color-mix(in srgb,var(--line-soft) 50%,transparent)}
+
+/* ---- ajustes p46: hoja de movimiento ---- */
+.fac-fecha-cat{grid-template-columns:auto minmax(0,1fr)}
+.fac-fecha-slot{display:flex}
+.fac-fecha-slot .fecha-btn{width:auto; min-height:38px; height:100%; padding:0 14px; border-radius:var(--r-md); background:var(--surface-2); border:1px solid var(--line-soft); font-size:13.5px; font-weight:600; gap:8px; white-space:nowrap; color:var(--ink); justify-content:space-between}
+.fac-fecha-slot .fecha-btn:hover{background:var(--line)}
+.fac-fecha-slot .fecha-btn .fecha-txt{color:var(--ink); font-weight:600}
+.fac-fecha-slot .fecha-btn.vacio .fecha-txt{color:var(--ink-3); font-weight:500}
+.fac-acc{flex:0 0 auto; margin-left:auto}
+.fac-acc .elim{margin-right:-9px}
+.fac-pie{grid-template-columns:repeat(3,minmax(0,1fr))}
+.fac-pie .fac-btn{grid-column:1 / 2}
+.fac-pie .fac-add{grid-column:2 / 4}
+@media (pointer:coarse){
+  #form-mov .fac-nombre input,#form-mov .fac-detalles textarea{font-size:16px!important}   /* 16 px: iOS no hace zoom al abrir el teclado */
+}
+/* ---- ajustes p46: tarjetas de movimientos en tres líneas ---- */
+.mov-card{grid-template-columns:40px minmax(0,1fr)!important}
+.mov-dias .mov-card{padding:var(--s3) var(--s4)}
+.mov-txt,.mov-dias .mov-txt{display:grid!important; grid-template-columns:minmax(0,1fr) auto; column-gap:var(--s3); row-gap:2px; align-items:center}
+.mov-txt .mov-titulo{grid-column:1; grid-row:1; display:block; -webkit-line-clamp:unset; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mov-txt .mov-cuenta{grid-column:2; grid-row:1; justify-self:end; max-width:46vw; font-size:12.5px; font-weight:500; color:var(--ink-3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.mov-txt .mov-sub{grid-column:1 / 3; grid-row:2}
+.mov-txt .mov-meta{grid-column:1; grid-row:3; align-self:center}
+.mov-txt .mov-monto{grid-column:2; grid-row:3; justify-self:end}
+/* ---- ajustes p46: gráfica Ingresos y egresos ---- */
+#graf-es,#graf-es *{-webkit-user-select:none; user-select:none; -webkit-touch-callout:none}
+#graf-es .graf-caja{touch-action:pan-y; -webkit-tap-highlight-color:transparent}
+#graf-es .mt-sparks{display:none}
+#graf-es .graf-caja > svg:focus{outline:none}
+#graf-es .graf-caja > svg:focus-visible{outline:2px solid var(--azul); outline-offset:2px}
+#graf-es .graf-tip{top:6px; transform:none!important; background:#fff; left:auto!important; right:0}
+#graf-es .graf-tip.izq{left:0!important; right:auto}
+:root[data-theme="dark"] #graf-es .graf-tip{background:var(--surface)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #graf-es .graf-tip{background:var(--surface)}}
 </style>
 </head>
 <body class="ph-no-capture fs-exclude" data-private="true">
@@ -1990,7 +2025,6 @@ path.lc-dib[stroke-dasharray]{stroke-dasharray:1}
         <h3 id="dlg-titulo">Nuevo movimiento</h3>
         <div class="fac-acc">
           <button type="button" class="elim" id="btn-borrar-mov" hidden aria-label="Eliminar movimiento" data-tip="Eliminar"><svg class="ico " viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.11686 7.7517C5.53016 7.72415 5.88754 8.03685 5.91509 8.45015L6.37503 15.3493C6.46489 16.6971 6.52892 17.6349 6.66948 18.3406C6.80583 19.025 6.99617 19.3873 7.26958 19.6431C7.54299 19.8989 7.91715 20.0647 8.60915 20.1552C9.32255 20.2485 10.2626 20.25 11.6134 20.25H12.3868C13.7376 20.25 14.6776 20.2485 15.391 20.1552C16.083 20.0647 16.4572 19.8989 16.7306 19.6431C17.004 19.3873 17.1943 19.025 17.3307 18.3406C17.4713 17.6349 17.5353 16.6971 17.6251 15.3493L18.0851 8.45015C18.1126 8.03685 18.47 7.72415 18.8833 7.7517C19.2966 7.77925 19.6093 8.13663 19.5818 8.54993L19.1183 15.5017C19.0328 16.7844 18.9638 17.8206 18.8018 18.6336C18.6334 19.4789 18.347 20.185 17.7554 20.7385C17.1638 21.2919 16.4402 21.5308 15.5856 21.6425C14.7635 21.7501 13.7251 21.7501 12.4395 21.75H11.5607C10.2751 21.7501 9.23664 21.7501 8.4146 21.6425C7.55995 21.5308 6.8364 21.2919 6.2448 20.7385C5.65321 20.185 5.36679 19.4789 5.19839 18.6336C5.03642 17.8205 4.96736 16.7844 4.88186 15.5017L4.41841 8.54993C4.39086 8.13663 4.70357 7.77925 5.11686 7.7517Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M10.3553 2.25004L10.3094 2.25002C10.093 2.24988 9.90445 2.24976 9.72643 2.27819C9.02313 2.39049 8.41453 2.82915 8.08559 3.46084C8.00232 3.62074 7.94282 3.79964 7.87452 4.00496L7.86 4.04858L7.76291 4.33984C7.74392 4.39681 7.73863 4.41251 7.73402 4.42524C7.55891 4.90936 7.10488 5.23659 6.59023 5.24964C6.5767 5.24998 6.56013 5.25004 6.50008 5.25004H3.5C3.08579 5.25004 2.75 5.58582 2.75 6.00004C2.75 6.41425 3.08579 6.75004 3.5 6.75004L6.50865 6.75004L6.52539 6.75004H17.4748L17.4915 6.75004L20.5001 6.75004C20.9143 6.75004 21.2501 6.41425 21.2501 6.00004C21.2501 5.58582 20.9143 5.25004 20.5001 5.25004H17.5001C17.44 5.25004 17.4235 5.24998 17.4099 5.24964C16.8953 5.23659 16.4413 4.90933 16.2661 4.42522C16.2616 4.41258 16.2562 4.39653 16.2373 4.33984L16.1402 4.04858L16.1256 4.00494C16.0573 3.79961 15.9978 3.62073 15.9146 3.46084C15.5856 2.82915 14.977 2.39049 14.2737 2.27819C14.0957 2.24976 13.9072 2.24988 13.6908 2.25002L13.6448 2.25004H10.3553ZM9.14458 4.93548C9.10531 5.04404 9.05966 5.14902 9.00815 5.25004H14.992C14.9405 5.14902 14.8949 5.04405 14.8556 4.9355L14.8169 4.82216L14.7171 4.52292C14.626 4.2494 14.605 4.19363 14.5842 4.15364C14.4745 3.94307 14.2716 3.79686 14.0372 3.75942C13.9927 3.75231 13.9331 3.75004 13.6448 3.75004H10.3553C10.067 3.75004 10.0075 3.75231 9.96296 3.75942C9.72853 3.79686 9.52566 3.94307 9.41601 4.15364C9.39519 4.19363 9.37419 4.24942 9.28302 4.52292L9.18322 4.82234C9.1682 4.86742 9.1565 4.90251 9.14458 4.93548Z" fill="currentColor"/></svg><span class="elim-txt"><span>Eliminar</span></span></button>
-          <input type="date" id="f-fecha" name="fecha" min="2000-01-01" max="2100-12-31" required>
         </div>
       </header>
       <div class="fac-prog" aria-hidden="false">
@@ -2013,7 +2047,10 @@ path.lc-dib[stroke-dasharray]{stroke-dasharray:1}
         <textarea id="f-detalles" name="notas" rows="1" maxlength="2000" placeholder="Detalles del movimiento" aria-label="Detalles del movimiento"></textarea>
       </div>
       <div class="fac-chips sep" id="f-tipo" role="radiogroup" aria-label="Tipo de movimiento" data-paso="cat"></div>
-      <label class="fac-card fac-desp" data-paso="cat2" data-vacio="1"><select name="categoriaId" id="f-cat" required aria-label="Categoría"></select><span class="fac-ph" aria-hidden="true">Categoría</span><svg class="ico fac-chev" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></label>
+      <div class="fac-par fac-fecha-cat">
+        <div class="fac-fecha-slot"><input type="date" id="f-fecha" name="fecha" min="2000-01-01" max="2100-12-31" required></div>
+        <label class="fac-card fac-desp" data-paso="cat2" data-vacio="1"><select name="categoriaId" id="f-cat" required aria-label="Categoría"></select><span class="fac-ph" aria-hidden="true">Categoría</span><svg class="ico fac-chev" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></label>
+      </div>
       <div class="fac-par">
         <label class="fac-card fac-desp" data-paso="metodo" data-vacio="1"><select name="metodo" id="f-metodo" aria-label="Método de pago"></select><span class="fac-ph" aria-hidden="true">Método de pago</span><svg class="ico fac-chev" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></label>
         <label class="fac-card fac-desp" data-paso="cuenta" id="campo-cuenta-mov" data-vacio="1"><span class="fac-cta" aria-hidden="true"></span><select name="cuentaId" id="f-cuenta" aria-label="Cuenta"></select><span class="fac-ph" aria-hidden="true">Cuenta</span><svg class="ico fac-chev" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false"><polyline points="6 9 12 15 18 9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></label>
@@ -3784,7 +3821,7 @@ function anillo(datos, tam){
   // medio anillo con tramos separados por un espacio limpio (sin puntas
   // redondeadas que se montaban unas sobre otras)
   const total = datos.reduce((s,d) => s + d.valor, 0);
-  if(!total) return '<div class="vacio">'+ico("ChartPie")+'<strong>Sin salidas este mes</strong>Cuando registres gastos, ahorro o deudas verás cómo se reparte tu dinero.</div>';
+  if(!total) return '<div class="vacio">'+ico("ChartPie")+'<strong>Sin egresos este mes</strong>Cuando registres gastos, ahorro o deudas verás cómo se reparte tu dinero.</div>';
   const ancho = tam*0.13, rc = tam/2 - ancho/2 - 2, cx = tam/2, cy = tam/2 + 2;
   const alto = cy + 6;
   let partes = '<path d="'+arco(cx, cy, rc, Math.PI, 2*Math.PI)+'" fill="none" stroke="var(--line-soft)" stroke-width="'+ancho+'"/>';
@@ -3796,9 +3833,9 @@ function anillo(datos, tam){
     if(af > ai) partes += '<path class="dona-seg" tabindex="0" data-etq="'+esc(d.etq)+'" data-val="'+esc(moneyCorto(d.valor))+'" data-pct="'+Math.round(d.valor/total*100)+'%" role="img" d="'+arco(cx, cy, rc, ai, af)+'" fill="none" stroke="'+d.color+'" stroke-width="'+ancho+'" aria-label="'+esc(d.etq)+': '+esc(money(d.valor))+'"></path>';
     a0 = a1;
   });
-  return '<svg class="dona" viewBox="0 0 '+tam+' '+alto.toFixed(1)+'" width="100%" style="max-width:'+tam+'px" role="group" aria-label="Distribución de salidas del mes: '+esc(money(total))+'">'+
+  return '<svg class="dona" viewBox="0 0 '+tam+' '+alto.toFixed(1)+'" width="100%" style="max-width:'+tam+'px" role="group" aria-label="Distribución de egresos del mes: '+esc(money(total))+'">'+
     partes +
-    '<text class="dona-t1" data-def="Salidas del mes" x="'+cx+'" y="'+(cy - rc*0.42).toFixed(1)+'" text-anchor="middle" font-size="12" font-weight="500" fill="var(--ink-3)">Salidas del mes</text>'+
+    '<text class="dona-t1" data-def="Egresos del mes" x="'+cx+'" y="'+(cy - rc*0.42).toFixed(1)+'" text-anchor="middle" font-size="12" font-weight="500" fill="var(--ink-3)">Egresos del mes</text>'+
     '<text class="dona-t2" data-def="'+esc(moneyCorto(total))+'" x="'+cx+'" y="'+(cy - rc*0.08).toFixed(1)+'" text-anchor="middle" font-size="'+(tam*0.12).toFixed(1)+'" font-weight="800" fill="var(--ink)" letter-spacing="-1">'+moneyCorto(total)+'</text>'+
     '<text class="dona-t3" x="'+cx+'" y="'+(cy + 4).toFixed(1)+'" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink-3)"></text>'+
     '</svg>';
@@ -3880,7 +3917,7 @@ function barrasAnio(anio, mes, cuantos){
   const d = {W:W, H:H, top:top, base:base, etq:etiquetas, anio:meses.map(x => x.anio), ing:ing, sal:sal,
              x:pIng.map(p => +p.x.toFixed(1)), yi:pIng.map(p => +p.y.toFixed(1)), ys:pSal.map(p => +p.y.toFixed(1))};
   return '<div class="graf-caja" data-graf="'+esc(JSON.stringify(d))+'" data-i="'+iR+'">'+
-    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" tabindex="0" aria-label="Entradas y salidas de '+(NOMBRE_RANGO[rangoGraf] || "el último año")+'. Usa las flechas para ver cada mes.">'+g+'</svg>'+
+    '<svg viewBox="0 0 '+W+' '+H+'" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" tabindex="0" aria-label="Ingresos y egresos de '+(NOMBRE_RANGO[rangoGraf] || "el último año")+'. Usa las flechas para ver cada mes.">'+g+'</svg>'+
     '<div class="graf-tip mt-card izq" style="left:'+(d.x[iR]/W*100).toFixed(1)+'%" aria-live="polite">'+grafTipHTML(d, iR)+'</div></div>';
 }
 function varPctHtml(act, prev, bueno){
@@ -4075,11 +4112,11 @@ function observarGraf(){
 function graficoEntradasSalidas(a, m){
   const btns = Object.keys(RANGOS_GRAF).map(k =>
     '<button type="button" data-rango="'+k+'" aria-pressed="'+(k===rangoGraf)+'" aria-label="Ver '+NOMBRE_RANGO[k]+'">'+k+'</button>').join("");
-  return '<div class="min-envol'+(minES ? ' min' : '')+'"><div class="panel-cab"><h2>'+ico("GraphUp","s18")+' Entradas y salidas</h2><div class="rango" role="group" aria-label="Periodo del gráfico">'+btns+'</div>'+
-    '<button type="button" class="min-btn" data-min="es" aria-expanded="'+(!minES)+'" aria-controls="es-cuerpo" aria-label="'+(minES ? "Expandir" : "Minimizar")+' Entradas y salidas">'+ico("ChevronUp","s18")+'</button></div>'+
+  return '<div class="min-envol'+(minES ? ' min' : '')+'"><div class="panel-cab"><h2>'+ico("GraphUp","s18")+' Ingresos y egresos</h2><div class="rango" role="group" aria-label="Periodo del gráfico">'+btns+'</div>'+
+    '<button type="button" class="min-btn" data-min="es" aria-expanded="'+(!minES)+'" aria-controls="es-cuerpo" aria-label="'+(minES ? "Expandir" : "Minimizar")+' Ingresos y egresos">'+ico("ChevronUp","s18")+'</button></div>'+
     '<div class="min-colapsa" id="es-cuerpo"><div class="min-in">'+barrasAnio(a, m, RANGOS_GRAF[rangoGraf])+
-    '<div class="leyenda"><span><i class="punto" style="background:var(--green)"></i>Entra</span>'+
-    '<span><i class="punto" style="background:var(--ink-3)"></i>Sale (incluye ahorro, deuda e inversión)</span></div></div></div></div>';
+    '<div class="leyenda"><span><i class="punto" style="background:var(--green)"></i>Ingresos</span>'+
+    '<span><i class="punto" style="background:var(--ink-3)"></i>Egresos (incluye ahorro, deuda e inversión)</span></div></div></div></div>';
 }
 function vistaPanel(){
   const a = estado.anio, m = estado.mes, mt = metricas(a, m);
@@ -4090,13 +4127,13 @@ function vistaPanel(){
   if(mt.n === 0){
     clase = "neutro"; icono = "InfoCircle"; aviso = "Aún no hay movimientos en " + MESES[m-1] + ". Registra el primero y todo lo demás se calcula solo.";
   }else if(mt.disponible < 0){
-    clase = "mal"; icono = "Warning"; aviso = "Estás en negativo: este mes salió más de lo que entró y lo que te quedó del mes anterior no alcanzó a cubrirlo. Faltan " + M(Math.abs(mt.disponible)) + ".";
+    clase = "mal"; icono = "Warning"; aviso = "Estás en negativo: este mes los egresos fueron mayores que los ingresos y lo que te quedó del mes anterior no alcanzó a cubrirlo. Faltan " + M(Math.abs(mt.disponible)) + ".";
   }else if(mt.remanente < 0){
-    clase = "alerta"; icono = "Danger"; aviso = "Este mes salió " + M(Math.abs(mt.remanente)) + " más de lo que entró. Aún tienes " + M(mt.disponible) + " porque del mes anterior te quedaron " + M(mt.anterior) + ".";
+    clase = "alerta"; icono = "Danger"; aviso = "Este mes los egresos superaron a los ingresos en " + M(Math.abs(mt.remanente)) + ". Aún tienes " + M(mt.disponible) + " porque del mes anterior te quedaron " + M(mt.anterior) + ".";
   }else if(excesos.length){
     clase = "alerta"; icono = "Danger"; aviso = "El saldo está bien, pero te pasaste del presupuesto en " + excesos.length + (excesos.length === 1 ? " categoría: " : " categorías: ") + excesos.slice(0,3).map(x => x.cat.nombre).join(", ") + (excesos.length > 3 ? "…" : "") + ".";
   }else{
-    clase = "ok"; icono = "CheckCircle"; aviso = "Balance positivo: este mes entró más de lo que salió, y todo está dentro del presupuesto. Tienes saldo a favor.";
+    clase = "ok"; icono = "CheckCircle"; aviso = "Balance positivo: este mes los ingresos fueron mayores que los egresos, y todo está dentro del presupuesto. Tienes saldo a favor.";
   }
   const titAviso = clase === "ok" ? "Vas bien" : clase === "neutro" ? "Sin movimientos" : "Cuidado";
   const entro = mt.t["Ingresos"], salio = entro - mt.remanente;
@@ -4143,8 +4180,8 @@ function vistaPanel(){
     <div class="hero-det" id="hero-det"><div class="hero-det-in">
       <p>${esc(aviso)}</p>
       <dl class="hero-cuentas">
-        <div><dt>Entró este mes</dt><dd>${M(entro)}</dd></div>
-        <div><dt>Salió este mes</dt><dd>${M(salio)}</dd></div>
+        <div><dt>Ingresos del mes</dt><dd>${M(entro)}</dd></div>
+        <div><dt>Egresos del mes</dt><dd>${M(salio)}</dd></div>
         ${mt.credito > 0 ? `<div><dt>Compras a crédito</dt><dd>${M(mt.credito)}</dd></div>` : ""}
         <div><dt>Quedó del mes anterior</dt><dd>${M(mt.anterior)}</dd></div>
         <div class="tot"><dt>Disponible</dt><dd>${M(mt.disponible)}</dd></div>
@@ -4166,7 +4203,7 @@ function vistaPanel(){
     </ol>
   </details>`}
   <div class="kpis">
-    ${kpi("Ingresos", vm(money(mt.t["Ingresos"])), varIng == null ? "todo lo que entró" : {html: flecha(varIng >= 0) + " " + pct(Math.abs(varIng),0) + " vs anterior"}, "Ingresos")}
+    ${kpi("Ingresos", vm(money(mt.t["Ingresos"])), varIng == null ? "todo lo que ingresó" : {html: flecha(varIng >= 0) + " " + pct(Math.abs(varIng),0) + " vs anterior"}, "Ingresos")}
     ${kpi("Gastos", vm(money(mt.gastos)), varGas == null ? "fijos + variables" : {html: flecha(varGas >= 0) + " " + pct(Math.abs(varGas),0) + " vs anterior"}, "Gastos Variables y Ocio")}
     ${kpi("Ahorros", vm(money(mt.ahorroInv)), "lo que apartaste", "Ahorro")}
     ${kpi("Deudas", vm(money(mt.t["Deuda"])), "abonado este mes", "Deuda")}
@@ -4248,12 +4285,10 @@ function listaMovMovil(lista){
     const cu = m.cuentaId ? cuentaPorId(m.cuentaId) : null;
     const tj = m.credito && m.tarjetaId ? nombreCat(m.tarjetaId) : "";
     const partesMeta = [m.moneda ? esc(simboloMoneda(m.moneda) + " " + fmtMiles.format(m.montoOriginal) + " " + m.moneda) : "", m.credito ? '<span class="badge">A crédito' + (tj ? " · " + esc(tj) : "") + "</span>" : esc(m.metodo || "")].filter(Boolean);
-    if(cu) partesMeta.push('<span class="mov-cta">' + icoCuenta(cu.icono || "tarjeta", "s14") + "</span>" + esc(cu.nombre));
-    const meta = partesMeta.join(" · ");
+    const cuenta = cu ? '<span class="mov-cuenta"><span class="mov-cta">' + icoCuenta(cu.icono || "tarjeta", "s14") + "</span>" + esc(cu.nombre) + "</span>" : "";
     html += `<button type="button" class="mov-card" data-editar="${esc(m.id)}" aria-label="Editar: ${esc(titulo)}">
       ${icoTipo(m.tipo)}
-      <span class="mov-txt"><span class="mov-titulo">${esc(titulo)}</span><span class="mov-sub">${esc(sub)}</span>${meta ? `<span class="mov-meta">${meta}</span>` : ""}${m.notas ? `<span class="mov-notas">${esc(m.notas)}</span>` : ""}</span>
-      <span class="mov-monto ${ing ? "pos" : ""}">${ing ? "+" : "−"}${money(m.monto)}</span></button>`;
+      <span class="mov-txt"><span class="mov-titulo">${esc(titulo)}</span>${cuenta}<span class="mov-sub">${esc(sub)}</span><span class="mov-meta">${partesMeta.join(" · ")}</span><span class="mov-monto ${ing ? "pos" : ""}">${ing ? "+" : "−"}${money(m.monto)}</span></span></button>`;
   });
   if(dia !== null) html += "</div></div>";
   return html;
@@ -4276,7 +4311,7 @@ function vistaMovimientos(){
   if(truncado) lista = lista.slice(0, LIMITE_FILAS);
 
   return `
-  ${cabVista("Movimientos", "Aquí registras lo que entra y sale. El resto se calcula solo.", `<button class="btn primario accion" data-nuevo-mov>${ico("Plus","s18")} Añadir movimiento</button>`)}
+  ${cabVista("Movimientos", "Aquí registras tus ingresos y egresos. El resto se calcula solo.", `<button class="btn primario accion" data-nuevo-mov>${ico("Plus","s18")} Añadir movimiento</button>`)}
   <div class="filtros">
     <div class="buscador">${ico("Search","s18")}<input class="ctrl" type="search" id="f-texto" placeholder="Buscar descripción, categoría o nota" value="${esc(filtros.texto)}" maxlength="80" aria-label="Buscar movimientos"><button type="button" class="buscar-x" id="f-texto-x" aria-label="Borrar búsqueda">${ico("Xmark","s16")}</button></div>
     <select class="ctrl" id="f-filtro-tipo" aria-label="Filtrar por tipo">
@@ -4632,8 +4667,8 @@ function tarjetaCuenta(c){
       <div class="item-acc"><button type="button" class="elim" data-borrar-cuenta="${esc(c.id)}" aria-label="Eliminar cuenta ${esc(c.nombre)}">${ico("Trash2","s18")}<span class="elim-txt"><span>Eliminar</span></span></button></div></div>
     <div class="item-hero hero-cuenta"><div><small>Saldo actual</small><strong class="${saldo < 0 ? "neg" : ""}">${money(saldo)}</strong></div></div>
     <div class="datos datos-cuenta">
-      ${cmLectura("Entradas", entra ? "+" + money(entra) : "—", entra ? "pos" : "tenue")}
-      ${cmLectura("Salidas", sale ? "−" + money(sale) : "—", sale ? "neg" : "tenue")}
+      ${cmLectura("Ingresos", entra ? "+" + money(entra) : "—", entra ? "pos" : "tenue")}
+      ${cmLectura("Egresos", sale ? "−" + money(sale) : "—", sale ? "neg" : "tenue")}
       <div class="ancho2 cm-inicial">${cmMonto("Saldo inicial (opcional)", c.saldoInicial, "data-cuenta", c.id, "saldoInicial", c.nombre)}</div>
     </div>
     <details class="acordeon">
@@ -4653,8 +4688,8 @@ function vistaCuentas(){
   ${cabVista("Cuentas", "El saldo real de cada banco o billetera. Es opcional. El saldo inicial es lo que tenías el día que empezaste a usar la app; para moverlo, elige la cuenta al añadir un movimiento.", `<button type="button" class="btn" id="btn-nueva-cuenta">${ico("Plus","s18")} Agregar cuenta</button>`)}
   ${cuentas.length ? `<section class="tarjeta tot-card" aria-label="Totales">
       <div><small>Saldo total</small><strong class="${tot.saldo < 0 ? "neg" : ""}">${money(tot.saldo)}</strong></div>
-      <div><small>Entradas</small><strong class="pos">+${money(tot.entradas)}</strong></div>
-      <div><small>Salidas</small><strong class="neg">−${money(tot.salidas)}</strong></div>
+      <div><small>Ingresos</small><strong class="pos">+${money(tot.entradas)}</strong></div>
+      <div><small>Egresos</small><strong class="neg">−${money(tot.salidas)}</strong></div>
     </section>
     <div class="rejilla-tarjetas">${cuentas.map(tarjetaCuenta).join("")}</div>`
     : `<div class="tarjeta vacio">${ico("Bank")}<strong>Todavía no tienes cuentas</strong>Agrega una por cada banco o billetera cuyo saldo quieras seguir.<button type="button" class="btn chico" id="btn-nueva-cuenta" style="margin-top:8px">${ico("Plus","s16")} Agregar cuenta</button></div>`}
@@ -5833,7 +5868,7 @@ function montarVistaEventos(){
       const min = !caja.classList.contains("min");
       if(k === "dona") minDona = min; else minES = min;
       caja.classList.toggle("min", min); mb.setAttribute("aria-expanded", String(!min));
-      mb.setAttribute("aria-label", (min ? "Expandir " : "Minimizar ") + (k === "dona" ? "A dónde se fue el dinero" : "Entradas y salidas"));
+      mb.setAttribute("aria-label", (min ? "Expandir " : "Minimizar ") + (k === "dona" ? "A dónde se fue el dinero" : "Ingresos y egresos"));
       if(!min){ setTimeout(ajustarGraf, 60); setTimeout(ajustarGraf, 420); }
       return;
     }
