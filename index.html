@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-v8cyuSJ6qG5+bc6GVOYU9bkpRqqrHYeKM5ltjNyHMwc=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-VXA7oYLGXwFnsgs8oRM29whzdb8Rqxubmsv5ePwL5I4=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -1945,6 +1945,19 @@ path.lc-dib[stroke-dasharray]{stroke-dasharray:1}
 /* insignia de movimientos: se ensancha con la cantidad (decenas, centenas…) y conserva el borde redondo */
 .insignia:not(.punto){box-sizing:border-box; width:auto; border-radius:999px; padding:0 7px; min-width:22px; white-space:nowrap; line-height:1; flex:none}
 .lado-min .sidebar .insignia:not(.punto){width:auto; height:18px; border-radius:999px; padding:0 5px; min-width:18px; right:-4px; left:auto}
+
+/* ---- p49: barras de desplazamiento con el estilo de la app ---- */
+:root{--sb-thumb:color-mix(in srgb,var(--ink) 20%,transparent); --sb-thumb-h:color-mix(in srgb,var(--ink) 34%,transparent)}
+*::-webkit-scrollbar{width:12px; height:12px; background:transparent}
+*::-webkit-scrollbar-track{background:transparent}
+*::-webkit-scrollbar-thumb{background:var(--sb-thumb); border-radius:999px; border:4px solid transparent; background-clip:content-box; min-height:36px}
+*::-webkit-scrollbar-thumb:hover{background:var(--sb-thumb-h); background-clip:content-box}
+*::-webkit-scrollbar-corner{background:transparent}
+@supports (-moz-appearance:none){*{scrollbar-width:thin; scrollbar-color:var(--sb-thumb) transparent}}
+.dd-menu{scrollbar-gutter:stable}
+.dd-menu::-webkit-scrollbar{width:14px}
+.dd-menu::-webkit-scrollbar-track{margin:8px 0}
+.dd-menu::-webkit-scrollbar-thumb{border-width:5px}
 </style>
 </head>
 <body class="ph-no-capture fs-exclude" data-private="true">
@@ -5499,7 +5512,7 @@ window.addEventListener("resize", () => dpPos());
 document.addEventListener("close", e => { if(e.target && e.target.tagName === "DIALOG") dpCerrar(false); }, true);
 
 /* ---- menús desplegables: reemplazan la lista nativa de cada <select> ---- */
-const dd = {el:null, sel:null, res:null, act:-1, buscar:"", tb:0, tc:0};
+const dd = {el:null, sel:null, res:null, act:-1, buscar:"", tb:0, tc:0, teclado:false};
 function ddOpciones(sel){
   const op = o => o.hidden ? null : {v:o.value, t:o.textContent, d:o.disabled, idx:o.index};
   const out = [];
@@ -5556,7 +5569,8 @@ function ddAbrir(sel){
   if(its[s0]){ its[s0].classList.add("act"); el.scrollTop = Math.max(0, its[s0].offsetTop - el.clientHeight / 2 + its[s0].offsetHeight / 2); }
   el.focus({preventScroll:true});
   el.addEventListener("pointermove", e => { if(e.pointerType !== "mouse") return; const b = e.target.closest(".dd-it:not(:disabled)"); if(b){ const i = its.indexOf(b); if(i !== dd.act || !el.dataset.res) ddActivo(i, true, false); } });
-  el.addEventListener("click", e => { const b = e.target.closest(".dd-it:not(:disabled)"); if(b) ddElegir(+b.dataset.idx); });
+  el.addEventListener("click", e => { e.stopPropagation(); const b = e.target.closest(".dd-it:not(:disabled)"); if(b) ddElegir(+b.dataset.idx); });
+  el.addEventListener("mousedown", e => e.preventDefault());
   el.addEventListener("keydown", ddTecla);
 }
 function ddElegir(idx){
@@ -5589,16 +5603,18 @@ function ddCerrar(devolverFoco, rapido){
   if(anc) anc.removeAttribute("aria-expanded");
   if(rapido || window.matchMedia("(prefers-reduced-motion:reduce)").matches) el.remove();
   else { el.classList.remove("abierto"); el.classList.add("saliendo"); setTimeout(() => el.remove(), 140); }
-  if(devolverFoco && sel){ try{ sel.focus({preventScroll:true}); }catch(_){} }
+  dd.tc = Date.now();
+  if(devolverFoco && sel){ try{ if(dd.teclado) sel.focus({preventScroll:true}); else sel.blur(); }catch(_){} }
 }
 (function(){
   const esSel = t => t && t.tagName === "SELECT" && !t.disabled && !t.multiple && !(t.size > 1);
   let tx = 0, ty = 0;
-  document.addEventListener("mousedown", e => { if(esSel(e.target)){ e.preventDefault(); try{ e.target.focus({preventScroll:true}); }catch(_){} } }, true);
-  document.addEventListener("click", e => { if(esSel(e.target)){ e.preventDefault(); e.stopPropagation(); ddAbrir(e.target); } }, true);
+  const fantasma = () => Date.now() - dd.tc < 500;   /* el toque que eligió la opción no debe reabrir otro menú */
+  document.addEventListener("mousedown", e => { if(esSel(e.target)){ e.preventDefault(); if(!fantasma() && e.pointerType !== "touch" && !window.matchMedia("(pointer:coarse)").matches){ try{ e.target.focus({preventScroll:true}); }catch(_){} } } }, true);
+  document.addEventListener("click", e => { if(esSel(e.target)){ e.preventDefault(); e.stopPropagation(); if(fantasma()) return; dd.teclado = false; ddAbrir(e.target); } }, true);
   document.addEventListener("touchstart", e => { if(esSel(e.target) && e.touches[0]){ tx = e.touches[0].clientX; ty = e.touches[0].clientY; } }, {capture:true, passive:true});
-  document.addEventListener("touchend", e => { if(esSel(e.target) && e.changedTouches[0]){ const t = e.changedTouches[0]; if(Math.hypot(t.clientX - tx, t.clientY - ty) < 10){ e.preventDefault(); ddAbrir(e.target); } } }, {capture:true, passive:false});
-  document.addEventListener("keydown", e => { if(!dd.el && esSel(e.target) && ["Enter", " ", "ArrowDown", "ArrowUp"].includes(e.key)){ e.preventDefault(); ddAbrir(e.target); } }, true);
+  document.addEventListener("touchend", e => { if(esSel(e.target) && e.changedTouches[0]){ const t = e.changedTouches[0]; e.preventDefault(); if(!fantasma() && Math.hypot(t.clientX - tx, t.clientY - ty) < 10){ dd.teclado = false; ddAbrir(e.target); } } }, {capture:true, passive:false});
+  document.addEventListener("keydown", e => { if(!dd.el && esSel(e.target) && ["Enter", " ", "ArrowDown", "ArrowUp"].includes(e.key)){ e.preventDefault(); dd.teclado = true; ddAbrir(e.target); } }, true);
   document.addEventListener("pointerdown", e => {
     if(!dd.el || dd.el.contains(e.target)) return;
     if(dd.sel && (e.target === dd.sel || (dd.anc && dd.anc.contains(e.target)))) return;
