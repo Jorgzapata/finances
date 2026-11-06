@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-a1MC75F6hYv4yNVm6tlGH2kbJ1vil4ZJS0/wzvfg1K0=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Hzza+zCBTpuLMrPXnNVr+HY6UH5/65nTVOGlf1TBLG0=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -1810,9 +1810,9 @@ path.lc-dib[stroke-dasharray]{stroke-dasharray:1}
 .suma-gran,.consent-bloque,.mon-caja,.mon-aviso,.res-card.tot,.res-card.tot .meses-grid > div,.hoja-mas button{border-color:color-mix(in srgb,var(--line-soft) 50%,transparent)}
 
 /* ---- ajustes p46: hoja de movimiento ---- */
-.fac-fecha-cat{grid-template-columns:auto minmax(0,1fr)}
-.fac-fecha-slot{display:flex}
-.fac-fecha-slot .fecha-btn{width:auto; min-height:38px; height:100%; padding:0 14px; border-radius:var(--r-md); background:var(--surface-2); border:1px solid var(--line-soft); font-size:13.5px; font-weight:600; gap:8px; white-space:nowrap; color:var(--ink); justify-content:space-between}
+.fac-fecha-cat{grid-template-columns:repeat(2,minmax(0,1fr)); margin-top:10px}   /* mismo espacio que hay entre Detalles y los botones de tipo */
+.fac-fecha-slot{display:flex; min-width:0}
+.fac-fecha-slot .fecha-btn{width:100%; min-height:38px; height:100%; padding:0 14px; border-radius:var(--r-md); background:var(--surface-2); border:1px solid var(--line-soft); font-size:13.5px; font-weight:600; gap:8px; white-space:nowrap; color:var(--ink); justify-content:space-between}
 .fac-fecha-slot .fecha-btn:hover{background:var(--line)}
 .fac-fecha-slot .fecha-btn .fecha-txt{color:var(--ink); font-weight:600}
 .fac-fecha-slot .fecha-btn.vacio .fecha-txt{color:var(--ink-3); font-weight:500}
@@ -1843,6 +1843,48 @@ path.lc-dib[stroke-dasharray]{stroke-dasharray:1}
 #graf-es .graf-tip.izq{left:0!important; right:auto}
 :root[data-theme="dark"] #graf-es .graf-tip{background:var(--surface)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) #graf-es .graf-tip{background:var(--surface)}}
+
+/* ---- animaciones p47: curvas, hojas, presión, escalonado, pulso, íconos ---- */
+:root{
+  --ease-mover:cubic-bezier(.65,0,.35,1);
+  --muelle:cubic-bezier(.22,1,.36,1);            /* sin rebote en la UI de todos los días */
+  --d-entra:220ms; --d-sale:176ms;               /* salidas 20 % más cortas que las entradas */
+}
+@media (prefers-reduced-motion:no-preference){
+  /* hojas y diálogos: entran con ease-out, salen hacia el botón */
+  dialog{transform:scale(.95); transition:opacity var(--d-sale) var(--ease-in), transform var(--d-sale) var(--ease-in), overlay var(--d-sale) allow-discrete, display var(--d-sale) allow-discrete}
+  dialog[open]{transform:none; transition:opacity var(--d-entra) var(--ease-out), transform var(--d-entra) var(--ease-out), overlay var(--d-entra) allow-discrete, display var(--d-entra) allow-discrete}
+  @starting-style{ dialog[open]{opacity:0; transform:scale(.95)} }
+  dialog::backdrop{transition:opacity var(--d-sale) var(--ease-out), overlay var(--d-sale) allow-discrete, display var(--d-sale) allow-discrete}
+  dialog[open]::backdrop{transition-duration:var(--d-entra)}
+  dialog.dlg-factura{transition:transform var(--d-sale) var(--ease-in), overlay var(--d-sale) allow-discrete, display var(--d-sale) allow-discrete}
+  dialog.dlg-factura[open]{transition:transform .34s var(--ease-out), overlay .3s allow-discrete, display .3s allow-discrete}
+  .papel.suelta{transition:transform .3s var(--ease-out)}
+  @media (max-width:640px){
+    dialog{transform:translateY(100%); opacity:1; transition:transform var(--d-sale) var(--ease-in), overlay var(--d-sale) allow-discrete, display var(--d-sale) allow-discrete}
+    dialog[open]{transform:none; transition:transform .3s var(--ease-out), overlay .3s allow-discrete, display .3s allow-discrete}
+    @starting-style{ dialog[open]{transform:translateY(100%); opacity:1} }
+  }
+  /* presión: 0,97 y vuelve sin rebote */
+  .btn,.mov-card,.cat-tile,.cat-chip,.fac-btn,.fab,#fab,.nav-item,nav.barra-inf button,.fila-config,.hero-chip,.hero-aviso,.per-movil,.rango button,.chips-ico button{transition-timing-function:var(--ease-out)}
+  .btn:active:not(:disabled),.mov-card:active,.cat-tile:active,.cat-chip:active,.fac-btn:active,.fab:active,#fab:active,.nav-item:active,nav.barra-inf button:active,.fila-config:active,.hero-chip:active,.hero-aviso:active,.per-movil:active,.rango button:active,.chips-ico button:active,.fac-add:active{transform:scale(.97); transition-duration:90ms}
+  /* escalonado: 30 ms entre filas */
+  .entra > :nth-child(2){animation-delay:30ms} .entra > :nth-child(3){animation-delay:60ms} .entra > :nth-child(4){animation-delay:90ms}
+  .entra > :nth-child(5){animation-delay:120ms} .entra > :nth-child(6){animation-delay:150ms} .entra > :nth-child(n+7){animation-delay:180ms}
+  .entra .mov-dias > *{animation:vista-in var(--d-media) var(--ease-out) backwards}
+  .entra .mov-dias > :nth-child(2){animation-delay:30ms} .entra .mov-dias > :nth-child(3){animation-delay:60ms} .entra .mov-dias > :nth-child(4){animation-delay:90ms}
+  .entra .mov-dias > :nth-child(5){animation-delay:120ms} .entra .mov-dias > :nth-child(6){animation-delay:150ms} .entra .mov-dias > :nth-child(n+7){animation-delay:180ms}
+  dialog.dlg-factura[open] .papel-cuerpo > *{animation-duration:.34s; animation-delay:calc(90ms + var(--i,0) * 30ms)}
+  .esq-pila > *{animation-duration:.34s}
+  /* pulso al confirmar */
+  .fac-add.exito{animation:pulso-ok .42s var(--ease-out)}
+  /* íconos que cambian: fundido + desenfoque */
+  .ico-cambia > *{animation:ico-cambia .22s var(--ease-out) both}
+  nav.barra-inf button[aria-current="true"] .ico,.nav-item[aria-current="true"] .ico{animation:ico-cambia .22s var(--ease-out) both}
+}
+@keyframes pulso-ok{0%{transform:scale(1)} 40%{transform:scale(1.035)} 100%{transform:scale(1)}}
+@keyframes ico-cambia{from{opacity:0; filter:blur(4px); transform:scale(.8)}to{opacity:1; filter:blur(0); transform:none}}
+@media (prefers-reduced-motion:reduce){.fac-add.exito,.ico-cambia > *{animation:none}}
 </style>
 </head>
 <body class="ph-no-capture fs-exclude" data-private="true">
@@ -5517,7 +5559,10 @@ function marcarVacios(){
     const lab = sel.closest("label"); if(lab) lab.dataset.vacio = vacio ? "1" : "0";
     if(id === "f-cuenta" && lab){
       const tj = sel.dataset.modo === "tarjeta", cu = (vacio || tj) ? null : cuentaPorId(sel.value), sp = lab.querySelector(".fac-cta");
-      if(sp) sp.innerHTML = tj ? ico("Card", "s18") : (cu ? icoCuenta(cu.icono || "tarjeta", "s18") : "");
+      if(sp){
+        const h = tj ? ico("Card", "s18") : (cu ? icoCuenta(cu.icono || "tarjeta", "s18") : "");
+        if(sp.innerHTML !== h){ sp.innerHTML = h; if(h){ sp.classList.remove("ico-cambia"); void sp.offsetWidth; sp.classList.add("ico-cambia"); } }
+      }
       lab.classList.toggle("con-ico", !!cu || (tj && !vacio));
     }
   });
@@ -5625,6 +5670,22 @@ async function animarAccion(btn, pendiente, listo){
   await espera(620);
   btn.classList.remove("exito");
 }
+/* animaciones: los diálogos de escritorio nacen y regresan al botón que los abrió */
+(function(){
+  let ultimo = null;
+  document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("button,a,[role=button]"); if(b) ultimo = b; }, true);
+  const abrir = HTMLDialogElement.prototype.showModal;
+  HTMLDialogElement.prototype.showModal = function(){
+    abrir.call(this);
+    try{
+      if(!ultimo || !ultimo.isConnected || this.classList.contains("dlg-factura") || window.matchMedia("(max-width:640px)").matches) return;
+      const t = ultimo.getBoundingClientRect(), r = this.getBoundingClientRect();
+      if(!r.width) return;
+      const x = Math.min(Math.max(t.left + t.width / 2 - r.left, 0), r.width), y = Math.min(Math.max(t.top + t.height / 2 - r.top, 0), r.height);
+      this.style.transformOrigin = x + "px " + y + "px";
+    }catch(_){}
+  };
+})();
 function montarDialogo(){
   const f = document.getElementById("form-mov");
   document.getElementById("f-tipo").addEventListener("change", e => { if(e.target.name === "tipo") llenarCategoriasForm(e.target.value, null); });
