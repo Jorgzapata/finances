@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-YMuR4J5OVn3xHwMu6x9ghdR2n+DP6s75I0NFgNjEJcM=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-PpwxOU3YhNRbzPXNQ4F9DXPqTocwzjc/Ob6q1g2gal0=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -1958,6 +1958,104 @@ path.lc-dib[stroke-dasharray]{stroke-dasharray:1}
 .dd-menu::-webkit-scrollbar{width:14px}
 .dd-menu::-webkit-scrollbar-track{margin:8px 0}
 .dd-menu::-webkit-scrollbar-thumb{border-width:5px}
+
+/* ---- p50: dona completa (estilo beui) y configuración ---- */
+.panel-cab .dona-acc{display:flex; align-items:center; gap:var(--s2); margin-left:auto; flex:none}
+.dona-acc .min-btn{margin-left:0}
+.dona-cfg{display:grid; place-items:center; width:36px; height:36px; border:1px solid var(--line-soft); border-radius:var(--r-sm); background:var(--surface); color:var(--ink-2); cursor:pointer; flex:none; transition:background var(--d-rapida), transform var(--d-media) var(--ease-out)}
+.dona-cfg:hover{background:var(--surface-2)}
+.dona-cfg[aria-expanded="true"]{background:var(--surface-2); color:var(--ink)}
+.dona-seg{pointer-events:none; cursor:default; transform-origin:100px 100px; transition:opacity .25s var(--ease-out), transform .32s var(--ease-out)}
+.dona .dona-hit{cursor:pointer; outline:none; pointer-events:stroke}
+.dona .dona-hit:focus-visible{stroke:color-mix(in srgb,var(--ink) 14%,transparent)}
+.dona.con-foco .dona-seg:not(.activo){opacity:.3}
+.dona-seg.activo{transform:scale(1.05); filter:none}
+.dona text{pointer-events:none; user-select:none; -webkit-user-select:none}
+.leyenda-dona.con-foco > div:not(.act){opacity:.55}
+.leyenda-dona > div[data-i]{cursor:pointer; transition:opacity .2s}
+@media (prefers-reduced-motion:no-preference){
+  .dona.entra .dona-anillo{transform-origin:100px 100px; animation:dona-gira .9s cubic-bezier(.22,1,.36,1) both}
+  .dona.entra .dona-seg{animation:dona-seg .5s var(--ease-out) both; animation-delay:calc(var(--k,0) * 60ms)}
+}
+@keyframes dona-gira{from{opacity:0; transform:rotate(-90deg) scale(.88)}to{opacity:1; transform:none}}
+@keyframes dona-seg{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.dona-seg{transition:none}}
+
+/* ---- p51: cuentas en rejilla adaptable, menú bloom, números, avisos e intento de PIN fallido ---- */
+@container vista (min-width:640px){
+  .rejilla-tarjetas.rej-cuentas{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rejilla-tarjetas.rej-cuentas[data-n="1"]{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+}
+@container vista (min-width:900px){
+  .rejilla-tarjetas.rej-cuentas[data-n="3"],.rejilla-tarjetas.rej-cuentas[data-n="4"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+/* bloom */
+.cu-bloom{position:relative; flex:none; width:44px; height:44px; margin-top:2px}
+.cu-bloom .cu-ico{margin:0; border:0; cursor:pointer; position:relative; z-index:1; transition:opacity .15s .05s, transform var(--d-media) var(--ease-out)}
+.cu-bloom .cu-ico:hover{background:var(--line-soft)}
+.cu-bloom .cu-ico:active{transform:scale(.97)}
+.cu-bloom.abierto .cu-ico{opacity:0; transition-delay:0s; pointer-events:none}
+.bloom-panel{position:absolute; left:0; top:0; z-index:40; width:min(calc(100vw - 48px),304px); box-sizing:border-box; border:1px solid var(--line); border-radius:16px; background:var(--surface); box-shadow:var(--shadow-alta); overflow:hidden;
+  visibility:hidden; clip-path:inset(0 calc(100% - 44px) calc(100% - 44px) 0 round var(--r-md)); transition:clip-path .45s cubic-bezier(.16,1,.3,1), visibility 0s .45s}
+.cu-bloom.abierto .bloom-panel{visibility:visible; clip-path:inset(0 0 0 0 round 16px); transition:clip-path .45s cubic-bezier(.16,1,.3,1), visibility 0s}
+.bloom-cab{display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:44px; padding:0 8px 0 14px; font-size:13px; font-weight:650; border-bottom:1px solid var(--line-soft); opacity:0; transition:opacity .15s}
+.cu-bloom.abierto .bloom-cab{opacity:1; transition:opacity .2s .12s}
+.bloom-x{display:grid; place-items:center; width:32px; height:32px; border:0; border-radius:var(--r-sm); background:transparent; color:var(--ink-2); cursor:pointer}
+.bloom-x:hover{background:var(--surface-2)}
+.bloom-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr))}
+.bloom-it{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; min-height:76px; padding:12px 6px; border:0; border-right:1px solid var(--line-soft); border-bottom:1px solid var(--line-soft); background:transparent; color:var(--ink); font:inherit; font-size:12px; font-weight:600; cursor:pointer; opacity:0}
+.bloom-it:nth-child(3n){border-right:0} .bloom-it:nth-last-child(-n+2){border-bottom:0} .bloom-grid .bloom-it:nth-child(3):nth-last-child(n+3){border-bottom:1px solid var(--line-soft)}
+.bloom-it:hover,.bloom-it:focus-visible{background:var(--surface-2); outline:0}
+.bloom-it[aria-checked="true"]{background:var(--sel-soft)}
+.bloom-it span{max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.cu-bloom.abierto .bloom-it{animation:bloom-it .4s cubic-bezier(.16,1,.3,1) both; animation-delay:var(--d,.1s)}
+@keyframes bloom-it{from{opacity:0; transform:scale(.85); filter:blur(6px)}to{opacity:1; transform:none; filter:blur(0)}}
+@media (prefers-reduced-motion:reduce){
+  .bloom-panel,.cu-bloom.abierto .bloom-panel{transition:none; clip-path:none}
+  .cu-bloom.abierto .bloom-it{animation:none; opacity:1} .bloom-cab{opacity:1; transition:none}
+}
+/* números */
+.sw{display:inline-flex; clip-path:inset(0 -999px); white-space:pre}
+.sw-c{position:relative; display:inline-block; white-space:pre}
+.sw-o{position:absolute; left:0; top:0}
+@media (prefers-reduced-motion:no-preference){
+  .sw.up .sw-n{animation:sw-in-up .18s var(--ease-out) both; animation-delay:calc(var(--i,0) * 6ms)}
+  .sw.up .sw-o{animation:sw-out-up .18s var(--ease-out) both; animation-delay:calc(var(--i,0) * 6ms)}
+  .sw.down .sw-n{animation:sw-in-dn .18s var(--ease-out) both; animation-delay:calc(var(--i,0) * 6ms)}
+  .sw.down .sw-o{animation:sw-out-dn .18s var(--ease-out) both; animation-delay:calc(var(--i,0) * 6ms)}
+  .sw.casc .sw-n{animation:sw-in-c .5s cubic-bezier(.22,1,.36,1) both; animation-delay:calc(var(--i,0) * 25ms)}
+  .sw.casc .sw-o{animation:sw-out-c .16s var(--ease-out) both; animation-delay:calc(var(--i,0) * 12ms)}
+}
+@keyframes sw-in-up{from{opacity:0; transform:translateY(45%)}to{opacity:1; transform:none}}
+@keyframes sw-out-up{from{opacity:1; transform:none}to{opacity:0; transform:translateY(-45%)}}
+@keyframes sw-in-dn{from{opacity:0; transform:translateY(-45%)}to{opacity:1; transform:none}}
+@keyframes sw-out-dn{from{opacity:1; transform:none}to{opacity:0; transform:translateY(45%)}}
+@keyframes sw-in-c{from{opacity:0; transform:translateY(105%); filter:blur(3px)}to{opacity:1; transform:none; filter:blur(0)}}
+@keyframes sw-out-c{from{opacity:1; transform:none; filter:blur(0)}to{opacity:0; transform:translateY(-105%); filter:blur(3px)}}
+/* avisos: una sola familia (insignia animada): píldora, borde y fondo teñidos del tono */
+.badge{--t:var(--ink-3); border:1px solid color-mix(in srgb,var(--t) 30%,transparent); background:color-mix(in srgb,var(--t) 10%,transparent); color:var(--t); transition:background .3s, color .3s, border-color .3s}
+.badge.pos{--t:var(--zap)} .badge.neg{--t:var(--nova)} .badge.ion{--t:var(--ion)} .badge.aviso{--t:var(--solar)} .badge.tenue{--t:var(--ink-3)}
+.badge.pos,.badge.neg,.badge.ion,.badge.aviso,.badge.tenue{background:color-mix(in srgb,var(--t) 10%,transparent); color:var(--t)}
+.badge:not(.pos):not(.neg):not(.ion):not(.aviso):not(.tenue){--t:var(--ink-2); background:var(--surface-2); border-color:var(--line)}
+.hero-aviso{box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 30%,transparent)}
+.aviso-flot{--t:var(--zap); background:var(--surface); color:var(--t); border-radius:var(--r-pill); padding:9px 16px 9px 12px; font-size:13.5px; font-weight:650; box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--t) 30%,transparent), var(--shadow-alta); position:relative; isolation:isolate}
+.aviso-flot::before{content:""; position:absolute; inset:0; z-index:-1; border-radius:inherit; background:color-mix(in srgb,var(--t) 10%,transparent)}
+.aviso-flot.error{--t:var(--nova); box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--t) 30%,transparent), var(--shadow-alta)}
+.aviso-flot span{color:var(--ink)}
+.aviso-flot{animation:badge-in .42s cubic-bezier(.22,1,.36,1)}
+.aviso-flot.sale{opacity:0; transform:translateY(-8px); filter:blur(3px); transition:opacity .14s, transform .14s, filter .14s}
+@keyframes badge-in{from{opacity:0; transform:translateY(12px); filter:blur(3px)}to{opacity:1; transform:none; filter:blur(0)}}
+.acc-error{border:1px solid color-mix(in srgb,var(--clay) 30%,transparent); background:color-mix(in srgb,var(--clay) 10%,transparent)}
+.acc-ok{border:1px solid color-mix(in srgb,var(--green) 30%,transparent); background:color-mix(in srgb,var(--green) 10%,transparent)}
+.mon-aviso{border:1px solid color-mix(in srgb,var(--solar) 30%,transparent); background:color-mix(in srgb,var(--solar) 10%,transparent)}
+@media (prefers-reduced-motion:reduce){.aviso-flot,.aviso-flot.sale{animation:none; filter:none}}
+/* PIN incorrecto: vaivén del conjunto de casillas y borde de error */
+.pin .pin-cajas span{transition:border-color .2s, color .2s}
+.pin.error .pin-cajas span{border-color:color-mix(in srgb,var(--clay) 60%,transparent); animation:none}
+.pin.error .pin-cajas{animation:pin-vaiven .45s cubic-bezier(.16,1,.3,1)}
+.pin.texto.error .pin-real{border-color:color-mix(in srgb,var(--clay) 60%,transparent); animation:pin-vaiven .45s cubic-bezier(.16,1,.3,1)}
+@keyframes pin-vaiven{0%{transform:translateX(0)}16%{transform:translateX(-5px)}33%{transform:translateX(5px)}50%{transform:translateX(-3px)}66%{transform:translateX(3px)}83%{transform:translateX(-1px)}100%{transform:translateX(0)}}
+@media (prefers-reduced-motion:reduce){.pin.error .pin-cajas,.pin.texto.error .pin-real{animation:none}}
 </style>
 </head>
 <body class="ph-no-capture fs-exclude" data-private="true">
@@ -3932,39 +4030,96 @@ function arco(cx, cy, r, a0, a1){
   const x0 = cx + r*Math.cos(a0), y0 = cy + r*Math.sin(a0), x1 = cx + r*Math.cos(a1), y1 = cy + r*Math.sin(a1);
   return 'M '+x0.toFixed(2)+' '+y0.toFixed(2)+' A '+r+' '+r+' 0 '+((a1-a0) > Math.PI ? 1 : 0)+' 1 '+x1.toFixed(2)+' '+y1.toFixed(2);
 }
-function anillo(datos, tam){
-  // medio anillo con tramos separados por un espacio limpio (sin puntas
-  // redondeadas que se montaban unas sobre otras)
-  const total = datos.reduce((s,d) => s + d.valor, 0);
-  if(!total) return '<div class="vacio">'+ico("ChartPie")+'<strong>Sin egresos este mes</strong>Cuando registres gastos, ahorro o deudas verás cómo se reparte tu dinero.</div>';
-  const ancho = tam*0.13, rc = tam/2 - ancho/2 - 2, cx = tam/2, cy = tam/2 + 2;
-  const alto = cy + 6;
-  let partes = '<path d="'+arco(cx, cy, rc, Math.PI, 2*Math.PI)+'" fill="none" stroke="var(--line-soft)" stroke-width="'+ancho+'"/>';
-  const hueco = 0.025;
-  let a0 = Math.PI;
-  datos.filter(d => d.valor > 0).forEach((d, i, arr) => {
-    const a1 = a0 + Math.PI*(d.valor/total);
-    const ai = a0 + (i ? hueco/2 : 0), af = a1 - (i < arr.length-1 ? hueco/2 : 0);
-    if(af > ai) partes += '<path class="dona-seg" tabindex="0" data-etq="'+esc(d.etq)+'" data-val="'+esc(moneyCorto(d.valor))+'" data-pct="'+Math.round(d.valor/total*100)+'%" role="img" d="'+arco(cx, cy, rc, ai, af)+'" fill="none" stroke="'+d.color+'" stroke-width="'+ancho+'" aria-label="'+esc(d.etq)+': '+esc(money(d.valor))+'"></path>';
+/* ---- dona: anillo completo, extremos redondeados, huecos uniformes ---- */
+const DONA_VISTAS = {"egr-tipo":"Egresos por tipo", "egr-cat":"Egresos por categoría", "ing-cat":"Ingresos por categoría"};
+const PALETA_DONA = ["var(--clay)","var(--magenta)","var(--aurora)","var(--plasma)","var(--ion)","var(--ocre)","var(--green)"];
+let donaVista = (() => { try{ const v = localStorage.getItem("zap:donaVista"); return DONA_VISTAS[v] ? v : "egr-tipo"; }catch(_){ return "egr-tipo"; } })();
+let donaVisto = false, donaAnimarHasta = 0;
+function datosDona(a, m, mt){
+  if(donaVista === "egr-tipo") return {titulo:"A dónde se fue el dinero", centro:"Egresos del mes", vacio:"Sin egresos este mes", detalle:"Cuando registres gastos, ahorro o deudas verás cómo se reparte tu dinero.", datos:[
+    {etq:"Gastos fijos", valor:mt.t["Gastos Fijos"], color:"var(--clay)"},
+    {etq:"Gastos variables y ocio", valor:mt.t["Gastos Variables y Ocio"], color:"var(--magenta)"},
+    {etq:"Ahorro", valor:mt.t["Ahorro"], color:"var(--aurora)"},
+    {etq:"Deuda", valor:mt.t["Deuda"], color:"var(--plasma)"},
+    {etq:"Inversión", valor:mt.t["Inversión"], color:"var(--ion)"}]};
+  const ing = donaVista === "ing-cat";
+  let l = estado.categorias.filter(c => ing ? c.tipo === "Ingresos" : c.tipo !== "Ingresos")
+    .map(c => ({etq:c.nombre, valor:sumaCat(a, m, c.id)})).filter(x => x.valor > 0).sort((x, y) => y.valor - x.valor);
+  if(l.length > 7){ const resto = l.slice(6).reduce((t, x) => t + x.valor, 0); l = l.slice(0, 6).concat({etq:"Otras categorías", valor:resto, otras:true}); }
+  l.forEach((x, k) => { x.color = x.otras ? "var(--ink-3)" : PALETA_DONA[k % PALETA_DONA.length]; });
+  return ing
+    ? {titulo:"De dónde viene el dinero", centro:"Ingresos del mes", vacio:"Sin ingresos este mes", detalle:"Cuando registres ingresos verás de dónde llega tu dinero.", datos:l}
+    : {titulo:"A dónde se fue el dinero", centro:"Egresos del mes", vacio:"Sin egresos este mes", detalle:"Cuando registres gastos, ahorro o deudas verás cómo se reparte tu dinero.", datos:l};
+}
+function anillo(dv, tam){
+  const datos = dv.datos, total = datos.reduce((s, d) => s + d.valor, 0);
+  if(!total) return '<div class="vacio">'+ico("ChartPie")+'<strong>'+esc(dv.vacio)+'</strong>'+esc(dv.detalle)+'</div>';
+  const T = 22, R = 100 - T/2 - 8, C = 100, GAP = 3*Math.PI/180, CAP = (T/2)/R;
+  const punto = (ang) => [C + R*Math.cos(ang), C + R*Math.sin(ang)];
+  const arc = (a0, a1) => { const [x0, y0] = punto(a0), [x1, y1] = punto(a1); return 'M '+x0.toFixed(2)+' '+y0.toFixed(2)+' A '+R+' '+R+' 0 '+((a1 - a0) > Math.PI ? 1 : 0)+' 1 '+x1.toFixed(2)+' '+y1.toFixed(2); };
+  const anim = performance.now() < donaAnimarHasta || (!donaVisto && (donaVisto = true, donaAnimarHasta = performance.now() + 900));
+  const activos = datos.map((d, i) => ({d, i})).filter(x => x.d.valor > 0);
+  let vis = "", hit = "", a0 = -Math.PI/2;
+  activos.forEach((x, k) => {
+    const d = x.d, a1 = a0 + 2*Math.PI*(d.valor/total);
+    let trazo;
+    if(activos.length === 1) trazo = 'M '+C+' '+(C - R)+' A '+R+' '+R+' 0 1 1 '+C+' '+(C + R)+' A '+R+' '+R+' 0 1 1 '+C+' '+(C - R);
+    else { const ai = a0 + GAP/2 + CAP, af = a1 - GAP/2 - CAP, mid = (a0 + a1)/2; trazo = af > ai ? arc(ai, af) : arc(mid, mid + 0.0001); }
+    const cap = activos.length === 1 ? "butt" : "round";
+    const dat = ' data-i="'+x.i+'" data-etq="'+esc(d.etq)+'" data-val="'+esc(moneyCorto(d.valor))+'" data-pct="'+(Math.round(d.valor/total*1000)/10).toString().replace(".", ",")+'%"';
+    vis += '<path class="dona-seg"'+dat+' d="'+trazo+'" fill="none" stroke="'+d.color+'" stroke-width="'+T+'" stroke-linecap="'+cap+'" style="--k:'+k+'"></path>';
+    hit += '<path class="dona-hit"'+dat+' tabindex="0" role="button" aria-pressed="false" d="'+trazo+'" fill="none" stroke="transparent" stroke-width="'+(T + 8)+'" stroke-linecap="'+cap+'" aria-label="'+esc(d.etq)+': '+esc(money(d.valor))+'"></path>';
     a0 = a1;
   });
-  return '<svg class="dona" viewBox="0 0 '+tam+' '+alto.toFixed(1)+'" width="100%" style="max-width:'+tam+'px" role="group" aria-label="Distribución de egresos del mes: '+esc(money(total))+'">'+
-    partes +
-    '<text class="dona-t1" data-def="Egresos del mes" x="'+cx+'" y="'+(cy - rc*0.42).toFixed(1)+'" text-anchor="middle" font-size="12" font-weight="500" fill="var(--ink-3)">Egresos del mes</text>'+
-    '<text class="dona-t2" data-def="'+esc(moneyCorto(total))+'" x="'+cx+'" y="'+(cy - rc*0.08).toFixed(1)+'" text-anchor="middle" font-size="'+(tam*0.12).toFixed(1)+'" font-weight="800" fill="var(--ink)" letter-spacing="-1">'+moneyCorto(total)+'</text>'+
-    '<text class="dona-t3" x="'+cx+'" y="'+(cy + 4).toFixed(1)+'" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink-3)"></text>'+
+  return '<svg class="dona'+(anim ? ' entra' : '')+'" viewBox="0 0 200 200" width="100%" style="max-width:'+tam+'px" role="group" aria-label="'+esc(dv.centro)+': '+esc(money(total))+'">'+
+    '<circle cx="100" cy="100" r="'+R+'" fill="none" stroke="var(--line-soft)" stroke-width="'+T+'" opacity=".6"/>'+
+    '<g class="dona-anillo">'+vis+'</g><g class="dona-hits">'+hit+'</g>'+
+    '<text class="dona-t1" data-def="'+esc(dv.centro)+'" x="100" y="84" text-anchor="middle" font-size="14" font-weight="500" fill="var(--ink-3)">'+esc(dv.centro)+'</text>'+
+    '<text class="dona-t2" data-def="'+esc(moneyCorto(total))+'" x="100" y="118" text-anchor="middle" font-size="30" font-weight="800" fill="var(--ink)" letter-spacing="-1">'+moneyCorto(total)+'</text>'+
+    '<text class="dona-t3" x="100" y="139" text-anchor="middle" font-size="14" font-weight="700" fill="var(--ink-3)"></text>'+
     '</svg>';
 }
 (function(){
-  const poner = (svg, seg) => {
+  const corto = t => t.length > 17 ? t.slice(0, 16).trimEnd() + "…" : t;
+  const poner = (card, idx) => {
+    const svg = card.querySelector(".dona"); if(!svg) return;
     const t1 = svg.querySelector(".dona-t1"), t2 = svg.querySelector(".dona-t2"), t3 = svg.querySelector(".dona-t3");
-    if(seg){ t1.textContent = seg.dataset.etq; t2.textContent = seg.dataset.val; t3.textContent = seg.dataset.pct; }
+    const seg = idx == null ? null : svg.querySelector('.dona-seg[data-i="'+idx+'"]');
+    svg.classList.toggle("con-foco", !!seg);
+    svg.querySelectorAll(".dona-seg").forEach(g => g.classList.toggle("activo", g === seg));
+    card.querySelectorAll(".leyenda-dona > div").forEach(r => r.classList.toggle("act", seg && r.dataset.i === String(idx)));
+    const lg = card.querySelector(".leyenda-dona"); if(lg) lg.classList.toggle("con-foco", !!seg);
+    if(seg){ t1.textContent = corto(seg.dataset.etq); t2.textContent = seg.dataset.val; t3.textContent = seg.dataset.pct; }
     else { t1.textContent = t1.dataset.def; t2.textContent = t2.dataset.def; t3.textContent = ""; }
   };
-  document.addEventListener("pointerover", e => { const g = e.target.closest && e.target.closest(".dona-seg"); if(g) poner(g.closest("svg"), g); });
-  document.addEventListener("focusin", e => { const g = e.target.closest && e.target.closest(".dona-seg"); if(g) poner(g.closest("svg"), g); });
-  document.addEventListener("pointerout", e => { const g = e.target.closest && e.target.closest(".dona-seg"); if(g) poner(g.closest("svg"), null); });
-  document.addEventListener("focusout", e => { const g = e.target.closest && e.target.closest(".dona-seg"); if(g) poner(g.closest("svg"), null); });
+  const objetivo = e => e.target.closest && e.target.closest(".dona-hit, .leyenda-dona > div[data-i]");
+  const sel = card => card.dataset.sel === undefined || card.dataset.sel === "" ? null : card.dataset.sel;
+  const marca = card => { card.querySelectorAll(".dona-hit").forEach(h => h.setAttribute("aria-pressed", String(h.dataset.i === sel(card)))); };
+  document.addEventListener("pointerover", e => { const o = objetivo(e); if(!o || e.pointerType !== "mouse") return; poner(o.closest("#card-dona"), o.dataset.i); });
+  document.addEventListener("pointerout", e => { const o = objetivo(e); if(!o || e.pointerType !== "mouse") return; if(o.contains(e.relatedTarget)) return; const c = o.closest("#card-dona"); poner(c, sel(c)); });
+  document.addEventListener("focusin", e => { const o = e.target.closest && e.target.closest(".dona-hit"); if(o) poner(o.closest("#card-dona"), o.dataset.i); });
+  document.addEventListener("focusout", e => { const o = e.target.closest && e.target.closest(".dona-hit"); if(o){ const c = o.closest("#card-dona"); poner(c, sel(c)); } });
+  document.addEventListener("click", e => {
+    const o = objetivo(e); if(!o) return;
+    const c = o.closest("#card-dona"); c.dataset.sel = sel(c) === o.dataset.i ? "" : o.dataset.i;
+    marca(c); poner(c, sel(c));
+  });
+  document.addEventListener("keydown", e => {
+    const h = e.target.closest && e.target.closest(".dona-hit"); if(!h) return;
+    if(e.key === "Enter" || e.key === " "){ e.preventDefault(); h.dispatchEvent(new MouseEvent("click", {bubbles:true})); }
+    else if(e.key === "ArrowDown" || e.key === "ArrowRight" || e.key === "ArrowUp" || e.key === "ArrowLeft"){
+      const l = Array.from(h.parentNode.children), k = l.indexOf(h) + (e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : -1);
+      e.preventDefault(); l[(k + l.length) % l.length].focus();
+    }
+  });
+  /* configuración: elegir qué muestra la dona */
+  document.addEventListener("click", e => { const b = e.target.closest && e.target.closest("[data-dona-cfg]"); if(b){ const s = document.getElementById("dona-vista"); if(s){ dd.teclado = e.detail === 0; ddAbrir(s, b); } } });
+  document.addEventListener("change", e => {
+    if(!e.target || e.target.id !== "dona-vista") return;
+    donaVista = DONA_VISTAS[e.target.value] ? e.target.value : "egr-tipo";
+    try{ localStorage.setItem("zap:donaVista", donaVista); }catch(_){}
+    donaVisto = true; donaAnimarHasta = performance.now() + 900; render();
+  });
 })();
 function ultimosMeses(anio, mes, cuantos){
   const lista = [];
@@ -4204,7 +4359,7 @@ function icoTipo(tipo, tam){
 }
 let heroVista = "disp", minDona = false, minES = false;
 let verValores = true; try{ verValores = localStorage.getItem(CLAVE_LOCAL + ":ver-valores") !== "0"; }catch(_){}
-const vm = t => verValores ? t : "**";
+const vm = (t, n) => verValores ? t : "*".repeat(n || 5);
 let grafAncho = 0, grafAlto = 0, grafObs = null, grafObservado = null, grafRAF = 0;
 function ajustarGraf(){
   const caja = document.querySelector("#graf-es .graf-caja"); if(!caja) return;
@@ -4257,13 +4412,7 @@ function vistaPanel(){
     ant:{etq:"Saldo mes anterior", val:money(mt.anterior), neg:mt.anterior < 0},
     act:{etq:"Saldo mes actual", val:(mt.remanente < 0 ? "−" : "+") + money(Math.abs(mt.remanente)), neg:mt.remanente < 0}
   };
-  const datos = [
-    {etq:"Gastos fijos", valor:mt.t["Gastos Fijos"], color:"var(--clay)"},
-    {etq:"Gastos variables y ocio", valor:mt.t["Gastos Variables y Ocio"], color:"var(--magenta)"},
-    {etq:"Ahorro", valor:mt.t["Ahorro"], color:"var(--aurora)"},
-    {etq:"Deuda", valor:mt.t["Deuda"], color:"var(--plasma)"},
-    {etq:"Inversión", valor:mt.t["Inversión"], color:"var(--ion)"}
-  ];
+  const dv = datosDona(a, m, mt), datos = dv.datos;
   const totalSalidas = datos.reduce((s,d) => s+d.valor, 0);
   const pagos = estado.categorias
     .filter(c => (c.tipo === "Gastos Fijos" || c.tipo === "Deuda") && c.dia > 0)
@@ -4302,7 +4451,7 @@ function vistaPanel(){
         <div class="tot"><dt>Disponible</dt><dd>${M(mt.disponible)}</dd></div>
       </dl>
     </div></div>
-    <div class="hero-valor ${heroItems[heroVista].neg ? "neg" : ""}" id="hero-valor" data-real="${esc(heroItems[heroVista].val)}" aria-label="${esc(heroItems[heroVista].etq)} ${verValores ? heroItems[heroVista].val : "oculto"}">${vm(heroItems[heroVista].val)}</div>
+    <div class="hero-valor ${heroItems[heroVista].neg ? "neg" : ""}" id="hero-valor" data-real="${esc(heroItems[heroVista].val)}" aria-label="${esc(heroItems[heroVista].etq)} ${verValores ? heroItems[heroVista].val : "oculto"}">${vm(heroItems[heroVista].val, 7)}</div>
     <div class="hero-chips">
       ${[heroVista === "ant" ? "disp" : "ant", heroVista === "act" ? "disp" : "act"].map(k => `<button type="button" class="hero-chip" data-hero-sw="${k}" aria-label="Ver ${esc(heroItems[k].etq)} en grande"><span>${esc(heroItems[k].etq)}</span><b>${vm(heroItems[k].val)}</b></button>`).join("")}
       <button type="button" class="hero-chip" data-hero-ir="movimientos"><span>Movimientos</span><b>${mt.n}</b></button>
@@ -4331,11 +4480,11 @@ function vistaPanel(){
 
   <div class="seccion duo duo-dona">
     <section class="tarjeta panel min-envol${minDona ? " min" : ""}" id="card-dona">
-      <div class="panel-cab"><h2>${ico("Chart","s18")} A dónde se fue el dinero</h2><button type="button" class="min-btn" data-min="dona" aria-expanded="${!minDona}" aria-controls="dona-cuerpo" aria-label="${minDona ? "Expandir" : "Minimizar"} A dónde se fue el dinero">${ico("ChevronUp","s18")}</button></div>
-      <div class="dona-graf">${anillo(datos, 240)}</div>
+      <div class="panel-cab"><h2>${ico("Chart","s18")} ${dv.titulo}</h2><div class="dona-acc"><button type="button" class="dona-cfg" data-dona-cfg aria-haspopup="listbox" aria-label="Configurar la dona">${ico("Filter","s18")}</button><select id="dona-vista" class="sr" tabindex="-1" aria-label="Qué muestra la dona">${Object.keys(DONA_VISTAS).map(k => `<option value="${k}"${k === donaVista ? " selected" : ""}>${DONA_VISTAS[k]}</option>`).join("")}</select><button type="button" class="min-btn" data-min="dona" aria-expanded="${!minDona}" aria-controls="dona-cuerpo" aria-label="${minDona ? "Expandir" : "Minimizar"} A dónde se fue el dinero">${ico("ChevronUp","s18")}</button></div></div>
+      <div class="dona-graf">${anillo(dv, 148)}</div>
       <div class="min-colapsa" id="dona-cuerpo"><div class="min-in">
       ${totalSalidas ? `<div class="leyenda-dona">
-        ${datos.slice().sort((x,y) => y.valor - x.valor).map(d => `<div>
+        ${datos.map((d, i) => ({d, i})).sort((x, y) => y.d.valor - x.d.valor).map(({d, i}) => `<div data-i="${i}">
           <span class="chip-pct" style="background:${d.color}">${pct(d.valor/totalSalidas, 0)}</span>
           <span>${esc(d.etq)}</span>
           <span style="font-weight:650; text-align:right">${vm(money(d.valor))}</span>
@@ -4778,7 +4927,13 @@ function vistaComparativas(){
 function tarjetaCuenta(c){
   const entra = entradasCuenta(c.id), sale = salidasCuenta(c.id), saldo = saldoCuenta(c.id);
   return `<article class="tarjeta item" data-card-cuenta="${esc(c.id)}">
-    <div class="item-cab"><span class="cu-ico" aria-hidden="true">${icoCuenta(c.icono || "tarjeta", "s24")}</span>${campoNombre("data-cuenta", c.id, c.nombre, "Nombre de la cuenta")}
+    <div class="item-cab"><div class="cu-bloom" data-bloom>
+      <button type="button" class="cu-ico" data-bloom-btn aria-haspopup="menu" aria-expanded="false" aria-label="Cambiar el ícono de la cuenta (actual: ${esc(NOMBRE_ICONO[c.icono || "tarjeta"])})">${icoCuenta(c.icono || "tarjeta", "s24")}</button>
+      <div class="bloom-panel" role="menu" aria-label="Ícono de la cuenta">
+        <div class="bloom-cab"><span>Ícono de la cuenta</span><button type="button" class="bloom-x" aria-label="Cerrar menú">${ico("Xmark","s16")}</button></div>
+        <div class="bloom-grid">${ICONOS_CUENTA.map((k, n) => `<button type="button" role="menuitemradio" class="bloom-it" aria-checked="${(c.icono || "tarjeta") === k}" tabindex="-1" style="--d:${(0.1 + Math.hypot(n % 3, Math.floor(n / 3)) * 0.07).toFixed(2)}s" data-cuenta-icono="${esc(c.id)}" data-icono="${k}">${icoCuenta(k, "s24")}<span>${esc(NOMBRE_ICONO[k])}</span></button>`).join("")}</div>
+      </div>
+    </div>${campoNombre("data-cuenta", c.id, c.nombre, "Nombre de la cuenta")}
       <div class="item-acc"><button type="button" class="elim" data-borrar-cuenta="${esc(c.id)}" aria-label="Eliminar cuenta ${esc(c.nombre)}">${ico("Trash2","s18")}<span class="elim-txt"><span>Eliminar</span></span></button></div></div>
     <div class="item-hero hero-cuenta"><div><small>Saldo actual</small><strong class="${saldo < 0 ? "neg" : ""}">${money(saldo)}</strong></div></div>
     <div class="datos datos-cuenta">
@@ -4786,10 +4941,7 @@ function tarjetaCuenta(c){
       ${cmLectura("Egresos", sale ? "−" + money(sale) : "—", sale ? "neg" : "tenue")}
       <div class="ancho2 cm-inicial">${cmMonto("Saldo inicial (opcional)", c.saldoInicial, "data-cuenta", c.id, "saldoInicial", c.nombre)}</div>
     </div>
-    <details class="acordeon">
-      <summary><span>Ícono de la cuenta</span><small>${esc(NOMBRE_ICONO[c.icono || "tarjeta"])}</small>${ico("ChevronDown","s16")}</summary>
-      <div class="chips-ico" role="radiogroup" aria-label="Ícono de la cuenta">${ICONOS_CUENTA.map(k => `<button type="button" role="radio" aria-checked="${(c.icono || "tarjeta") === k}" aria-label="${esc(NOMBRE_ICONO[k])}" title="${esc(NOMBRE_ICONO[k])}" data-cuenta-icono="${esc(c.id)}" data-icono="${k}">${icoCuenta(k, "s24")}</button>`).join("")}</div>
-    </details>
+
   </article>`;
 }
 function vistaCuentas(){
@@ -4806,7 +4958,7 @@ function vistaCuentas(){
       <div><small>Ingresos</small><strong class="pos">+${money(tot.entradas)}</strong></div>
       <div><small>Egresos</small><strong class="neg">−${money(tot.salidas)}</strong></div>
     </section>
-    <div class="rejilla-tarjetas">${cuentas.map(tarjetaCuenta).join("")}</div>`
+    <div class="rejilla-tarjetas rej-cuentas" data-n="${Math.min(cuentas.length, 4)}">${cuentas.map(tarjetaCuenta).join("")}</div>`
     : `<div class="tarjeta vacio">${ico("Bank")}<strong>Todavía no tienes cuentas</strong>Agrega una por cada banco o billetera cuyo saldo quieras seguir.<button type="button" class="btn chico" id="btn-nueva-cuenta" style="margin-top:8px">${ico("Plus","s16")} Agregar cuenta</button></div>`}
 
   <div class="seccion">
@@ -4958,6 +5110,7 @@ function avisar(texto, tipo){
   const c = document.getElementById("avisos"); if(!c) return;
   const el = document.createElement("div");
   el.className = "aviso-flot " + (tipo === "error" ? "error" : "ok");
+  el.setAttribute("role", tipo === "error" ? "alert" : "status");
   el.innerHTML = ico(tipo === "error" ? "Warning" : "CheckCircle", "s18") + "<span></span>";
   el.lastChild.textContent = texto;
   c.appendChild(el);
@@ -5021,7 +5174,7 @@ function render(){
   if(quien) quien.textContent = (backend === "supabase" && sesion && sesion.email) ? usuarioCorto(sesion.email) : (backend === "local" ? "Solo en este dispositivo" : "Tu dinero, en orden");
   const av = document.getElementById("lado-avatar");
   if(av) av.textContent = (backend === "supabase" && sesion && sesion.email ? sesion.email : "Finanzas").trim().charAt(0).toUpperCase();
-  actualizarInsignias(); sincronizarTema(); animarSlots();
+  actualizarInsignias(); sincronizarTema(); animarSlots(); animarNumeros();
   window.scrollTo(0, y);
 }
 let tEntra = 0;
@@ -5285,7 +5438,8 @@ function limpiarPin(id){ const i = document.getElementById(id); if(i){ i.value =
 function marcarErrorPin(id){
   const c = document.getElementById(id) && document.getElementById(id).closest(".pin"); if(!c) return;
   c.classList.remove("error"); void c.offsetWidth; c.classList.add("error");
-  setTimeout(() => c.classList.remove("error"), 600);
+  const inp = document.getElementById(id);
+  if(inp) inp.addEventListener("input", () => c.classList.remove("error"), {once:true});
 }
 function ponerModoTexto(id, texto){
   const input = document.getElementById(id), caja = input.closest(".pin");
@@ -5511,6 +5665,76 @@ document.addEventListener("pointerdown", e => {
 window.addEventListener("resize", () => dpPos());
 document.addEventListener("close", e => { if(e.target && e.target.tagName === "DIALOG") dpCerrar(false); }, true);
 
+/* ---- números: dígitos que cambian en vivo, y cascada al ocultar o mostrar valores ---- */
+const SW_SEL = ".hero-valor, .hero-chip b, .kpi .num, .kpi-linea b, .tot-card strong, .item-hero strong";
+let swPrev = {}, swVista = null;
+function swClave(el){
+  if(el.id === "hero-valor") return "hero|" + heroVista;
+  const card = el.closest("[data-card-cuenta],[data-card-cat]"), id = card ? (card.dataset.cardCuenta || card.dataset.cardCat) : "";
+  let etq;
+  if(el.closest(".hero-chip")) etq = "chip|" + (el.previousElementSibling ? el.previousElementSibling.textContent : "");
+  else if(el.closest(".kpi, .kpi-linea")){ const c = el.closest(".kpi, .kpi-linea").querySelector(".kpi-cab"); etq = "kpi|" + (c ? c.textContent.trim() : ""); }
+  else etq = "v|" + (el.previousElementSibling ? el.previousElementSibling.textContent.trim() : "");
+  return etq + "|" + id;
+}
+const swMasc = t => /^\*+$/.test(t);
+const swNum = t => { const d = t.replace(/\D/g, ""); return (/[−-]/.test(t) ? -1 : 1) * (d ? +d : 0); };
+function swCambiar(el, v, n){
+  const casc = swMasc(v) !== swMasc(n), sube = swNum(n) >= swNum(v);
+  const a = [...v], b = [...n], L = Math.max(a.length, b.length);
+  let h = "";
+  for(let i = 0; i < L; i++){
+    const oc = a[casc ? i : i - (L - a.length)] || "", nc = b[casc ? i : i - (L - b.length)] || "";
+    h += oc === nc ? '<span class="sw-c">' + esc(nc) + "</span>" : '<span class="sw-c" style="--i:' + i + '"><span class="sw-n">' + esc(nc) + '</span><span class="sw-o">' + esc(oc) + "</span></span>";
+  }
+  el.innerHTML = '<span class="sr">' + esc(n) + '</span><span class="sw ' + (casc ? "casc" : sube ? "up" : "down") + '" aria-hidden="true">' + h + "</span>";
+  clearTimeout(el._sw); el._sw = setTimeout(() => { if(el.isConnected) el.textContent = n; }, casc ? 700 + L * 25 : 320 + L * 6);
+}
+function animarNumeros(){
+  const cont = document.getElementById("vista"); if(!cont || cargaInicial) return;
+  if(swVista !== vista){ swVista = vista; swPrev = {}; }
+  const quieto = window.matchMedia("(prefers-reduced-motion:reduce)").matches, nuevo = {};
+  cont.querySelectorAll(SW_SEL).forEach(el => {
+    if(el.children.length) return;
+    const k = swClave(el), t = el.textContent.trim(); nuevo[k] = t;
+    const v = swPrev[k];
+    if(v === undefined || v === t || quieto) return;
+    swCambiar(el, v, t);
+  });
+  swPrev = nuevo;
+}
+/* ---- menú bloom del ícono de la cuenta: nace del mismo ícono ---- */
+(function(){
+  const cerrar = (b, foco) => { if(!b) return; b.classList.remove("abierto"); const t = b.querySelector("[data-bloom-btn]"); t.setAttribute("aria-expanded", "false"); b.querySelectorAll(".bloom-it").forEach(x => x.tabIndex = -1); if(foco) t.focus({preventScroll:true}); };
+  const abrir = (b, teclado) => {
+    document.querySelectorAll("[data-bloom].abierto").forEach(o => { if(o !== b) cerrar(o); });
+    b.classList.add("abierto"); b.querySelector("[data-bloom-btn]").setAttribute("aria-expanded", "true");
+    const its = Array.from(b.querySelectorAll(".bloom-it")), a = its.find(x => x.getAttribute("aria-checked") === "true") || its[0];
+    its.forEach(x => x.tabIndex = x === a ? 0 : -1);
+    if(teclado) setTimeout(() => a.focus({preventScroll:true}), 60);
+  };
+  document.addEventListener("click", e => {
+    const t = e.target.closest && e.target.closest("[data-bloom-btn]");
+    if(t){ const b = t.closest("[data-bloom]"); if(b.classList.contains("abierto")) cerrar(b); else abrir(b, e.detail === 0); return; }
+    const x = e.target.closest && e.target.closest(".bloom-x"); if(x) cerrar(x.closest("[data-bloom]"), true);
+  });
+  document.addEventListener("pointerdown", e => { document.querySelectorAll("[data-bloom].abierto").forEach(b => { if(!b.contains(e.target)) cerrar(b); }); }, true);
+  document.addEventListener("keydown", e => {
+    const b = e.target.closest && e.target.closest("[data-bloom]"); if(!b) return;
+    const abierto = b.classList.contains("abierto");
+    if(e.target.matches("[data-bloom-btn]") && (e.key === "ArrowDown" || e.key === "ArrowUp")){ e.preventDefault(); abrir(b, true); return; }
+    if(!abierto) return;
+    if(e.key === "Escape"){ e.preventDefault(); e.stopPropagation(); cerrar(b, true); return; }
+    const its = Array.from(b.querySelectorAll(".bloom-it")), i = its.indexOf(document.activeElement); if(i < 0) return;
+    const paso = {ArrowRight:1, ArrowLeft:-1, ArrowDown:3, ArrowUp:-3}[e.key];
+    let k = i;
+    if(paso !== undefined) k = Math.min(its.length - 1, Math.max(0, i + paso));
+    else if(e.key === "Home") k = 0; else if(e.key === "End") k = its.length - 1; else return;
+    e.preventDefault(); its.forEach(x => x.tabIndex = -1); its[k].tabIndex = 0; its[k].focus();
+  });
+  document.addEventListener("focusout", e => { const b = e.target.closest && e.target.closest("[data-bloom].abierto"); if(b && e.relatedTarget && !b.contains(e.relatedTarget)) cerrar(b); });
+})();
+/* ---- insignias: los avisos entran y salen con desenfoque ---- */
 /* ---- menús desplegables: reemplazan la lista nativa de cada <select> ---- */
 const dd = {el:null, sel:null, res:null, act:-1, buscar:"", tb:0, tc:0, teclado:false};
 function ddOpciones(sel){
@@ -5547,7 +5771,7 @@ function ddPosicionar(){
   el.style.left = x + "px"; el.style.top = (abajo ? r.bottom + 6 : r.top - h - 6) + "px";
   if(dd.primera) el.style.transformOrigin = Math.min(Math.max(r.left + r.width / 2 - x, 0), el.offsetWidth) + "px " + (abajo ? "top" : "bottom");
 }
-function ddAbrir(sel){
+function ddAbrir(sel, ancla){
   if(sel.disabled) return;
   if(dd.el && dd.sel === sel){ ddCerrar(true); return; }
   ddCerrar(false, true);
@@ -5567,7 +5791,7 @@ function ddAbrir(sel){
   padre.appendChild(el);
   dd.el = el; dd.sel = sel; dd.res = el.querySelector(".dd-res");
   /* posición: bajo el campo, o encima si abajo no cabe (se recalcula si cambia el área visible: teclado, rotación) */
-  dd.anc = sel.closest("label.fac-card") || sel; dd.primera = true;
+  dd.anc = ancla || sel.closest("label.fac-card") || sel; dd.primera = true;
   ddPosicionar(); dd.primera = false;
   clearTimeout(dd.tp); dd.tp = setTimeout(ddPosicionar, 120); setTimeout(ddPosicionar, 380);
   el.style.visibility = "";
@@ -5612,7 +5836,7 @@ function ddCerrar(devolverFoco, rapido){
   if(rapido || window.matchMedia("(prefers-reduced-motion:reduce)").matches) el.remove();
   else { el.classList.remove("abierto"); el.classList.add("saliendo"); setTimeout(() => el.remove(), 140); }
   dd.tc = Date.now();
-  if(devolverFoco && sel){ try{ if(dd.teclado) sel.focus({preventScroll:true}); else sel.blur(); }catch(_){} }
+  if(devolverFoco && sel){ try{ if(dd.teclado) (anc && anc.tagName === "BUTTON" ? anc : sel).focus({preventScroll:true}); else sel.blur(); }catch(_){} }
 }
 (function(){
   const esSel = t => t && t.tagName === "SELECT" && !t.disabled && !t.multiple && !(t.size > 1);
@@ -6158,7 +6382,7 @@ function montarVistaEventos(){
       return;
     }
     const ci = e.target.closest("[data-cuenta-icono]");
-    if(ci){ const c = cuentaPorId(ci.dataset.cuentaIcono); if(c && ICONOS_CUENTA.includes(ci.dataset.icono)){ c.icono = ci.dataset.icono; c.mod = tick(); marcar(); render(); const b2 = cont.querySelector('[data-card-cuenta="' + c.id + '"] details summary'); if(b2) b2.focus({preventScroll:true}); } return; }
+    if(ci){ const c = cuentaPorId(ci.dataset.cuentaIcono); if(c && ICONOS_CUENTA.includes(ci.dataset.icono)){ c.icono = ci.dataset.icono; c.mod = tick(); marcar(); render(); const b2 = cont.querySelector('[data-card-cuenta="' + c.id + '"] [data-bloom-btn]'); if(b2) b2.focus({preventScroll:true}); } return; }
     const rp = e.target.closest("[data-resper]");
     if(rp){ const k = rp.dataset.resper; if(k === "P" && resPer !== "P"){ const ms0 = mesesResumen(); resDesde = ms0[0]; resHasta = ms0[ms0.length - 1]; } resPer = k; render(); return; }
     const sr = e.target.closest("[data-suma-rango]");
