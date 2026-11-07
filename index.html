@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-VXA7oYLGXwFnsgs8oRM29whzdb8Rqxubmsv5ePwL5I4=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-YMuR4J5OVn3xHwMu6x9ghdR2n+DP6s75I0NFgNjEJcM=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -5532,6 +5532,21 @@ function ddActivo(i, animar, desplazar){
   r.style.width = b.offsetWidth + "px"; r.style.height = b.offsetHeight + "px"; r.style.transform = "translateY(" + b.offsetTop + "px)";
   dd.el.dataset.res = "1"; dd.el.setAttribute("aria-activedescendant", b.id);
 }
+function ddPosicionar(){
+  const el = dd.el, anc = dd.anc; if(!el || !anc) return;
+  const vv = window.visualViewport, vt = vv ? vv.offsetTop : 0, vl = vv ? vv.offsetLeft : 0, vh = vv ? vv.height : window.innerHeight, vw = vv ? vv.width : window.innerWidth;
+  const r = anc.getBoundingClientRect(), tope = el.scrollTop;
+  el.style.maxHeight = "none";
+  const w = Math.min(Math.max(r.width, 192), vw - 16);
+  el.style.minWidth = w + "px"; el.style.maxWidth = (vw - 16) + "px";
+  const alto = el.scrollHeight, libreAb = vt + vh - r.bottom - 14, libreAr = r.top - vt - 14;
+  const abajo = alto <= libreAb || libreAb >= libreAr, libre = abajo ? libreAb : libreAr;
+  const h = Math.max(120, Math.min(alto, 420, libre));
+  el.style.maxHeight = h + "px"; el.scrollTop = tope;
+  const x = Math.min(Math.max(vl + 8, r.left), vl + vw - el.offsetWidth - 8);
+  el.style.left = x + "px"; el.style.top = (abajo ? r.bottom + 6 : r.top - h - 6) + "px";
+  if(dd.primera) el.style.transformOrigin = Math.min(Math.max(r.left + r.width / 2 - x, 0), el.offsetWidth) + "px " + (abajo ? "top" : "bottom");
+}
 function ddAbrir(sel){
   if(sel.disabled) return;
   if(dd.el && dd.sel === sel){ ddCerrar(true); return; }
@@ -5551,19 +5566,12 @@ function ddAbrir(sel){
   el.style.visibility = "hidden"; el.classList.add("abierto");
   padre.appendChild(el);
   dd.el = el; dd.sel = sel; dd.res = el.querySelector(".dd-res");
-  /* posición: bajo el campo, o encima si abajo no cabe */
-  const anc = sel.closest("label.fac-card") || sel, r = anc.getBoundingClientRect();
-  const w = Math.min(Math.max(r.width, 192), window.innerWidth - 16);
-  el.style.minWidth = w + "px"; el.style.maxWidth = (window.innerWidth - 16) + "px";
-  const libreAb = window.innerHeight - r.bottom - 14, libreAr = r.top - 14, alto = el.scrollHeight;
-  const abajo = alto <= libreAb || libreAb >= libreAr, libre = abajo ? libreAb : libreAr;
-  el.style.maxHeight = Math.max(120, Math.min(320, libre)) + "px";
-  const h = Math.min(alto, parseFloat(el.style.maxHeight));
-  const x = Math.min(Math.max(8, r.left), window.innerWidth - el.offsetWidth - 8);
-  el.style.left = x + "px"; el.style.top = (abajo ? r.bottom + 6 : r.top - h - 6) + "px";
-  el.style.transformOrigin = Math.min(Math.max(r.left + r.width / 2 - x, 0), el.offsetWidth) + "px " + (abajo ? "top" : "bottom");
+  /* posición: bajo el campo, o encima si abajo no cabe (se recalcula si cambia el área visible: teclado, rotación) */
+  dd.anc = sel.closest("label.fac-card") || sel; dd.primera = true;
+  ddPosicionar(); dd.primera = false;
+  clearTimeout(dd.tp); dd.tp = setTimeout(ddPosicionar, 120); setTimeout(ddPosicionar, 380);
   el.style.visibility = "";
-  anc.setAttribute("aria-expanded", "true"); dd.anc = anc;
+  dd.anc.setAttribute("aria-expanded", "true"); const anc = dd.anc;
   const its = ddItems(), s0 = Math.max(0, its.findIndex(b => b.getAttribute("aria-selected") === "true"));
   delete el.dataset.res; dd.act = s0;
   if(its[s0]){ its[s0].classList.add("act"); el.scrollTop = Math.max(0, its[s0].offsetTop - el.clientHeight / 2 + its[s0].offsetHeight / 2); }
@@ -5620,7 +5628,9 @@ function ddCerrar(devolverFoco, rapido){
     if(dd.sel && (e.target === dd.sel || (dd.anc && dd.anc.contains(e.target)))) return;
     ddCerrar(false);
   }, true);
-  window.addEventListener("resize", () => ddCerrar(false, true));
+  const repos = () => { if(dd.el) requestAnimationFrame(ddPosicionar); };
+  window.addEventListener("resize", repos);
+  if(window.visualViewport){ window.visualViewport.addEventListener("resize", repos); window.visualViewport.addEventListener("scroll", repos); }
   document.addEventListener("close", e => { if(e.target && e.target.tagName === "DIALOG") ddCerrar(false, true); }, true);
 })();
 
