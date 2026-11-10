@@ -9,7 +9,7 @@
      IMPORTANTE: si editas el bloque de código de abajo, la huella cambia y el
      navegador lo bloqueará. Vuelve a generar el archivo con build.py, o
      recalcula el sha256 del contenido del script y cámbialo aquí. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-AH3+n8P13KaNuxsNfxRHnV5XULnSNQa/OrTAn/8EuTo=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-X1o4L4d/jzhSlR6IPB7LbzALsfp5zvscyLYwtg6mDsw=' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src https://*.supabase.co https://cdn.jsdelivr.net https://*.currency-api.pages.dev; frame-src https://challenges.cloudflare.com; manifest-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; upgrade-insecure-requests">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="X-Content-Type-Options" content="nosniff">
 <meta name="robots" content="noindex, nofollow">
@@ -4454,9 +4454,9 @@ function frameAt(T, P, outro = 0) {
 }
 
 const BASE = {
-  tileSize: 306, logoScale: 0.7, finalScale: 0.69, iconPlate: true, originalColors: true,
+  tileSize: 306, logoScale: 0.7, finalScale: 1, iconPlate: true, originalColors: true,
   opticalDepth: 1.1, dispersion: 1.7, glow: 1.25, doubleBevel: 1, bevelWidth: 0.14, corner: 4.8, cornerPull: 2.1, cornerWidth: 2.2, cornerFocus: 0.58, edgeSmear: 2.85, stretch: 0, tilt: 0.35, bulge: 1, specular: 1,
-  halo: 0, shadow: 1, ripple: 1.2, rippleTau: 0.5, bounce: 0, response: 0.34, startSize: 0.2, startZoom: 2.6, present: 1.8, drift: 0.12, swell: 0.5, focus: 1,
+  halo: 0, shadow: 1, ripple: 1.2, rippleTau: 0.5, bounce: 0, response: 0.34, startSize: 0.2, startZoom: 2.6, present: 1.5, drift: 0.12, swell: 0.5, focus: 1,
   background: '#F6F5F1', plateColor: '#000000', logoColor: '#ffffff'
 };
 const LOOKS = {
@@ -4488,18 +4488,15 @@ function iniciarLogoIntro(){
   const P = Object.assign({}, LG.LOOKS[temaOscuro() ? "dark" : "light"]);
   const ov = document.createElement("div"); ov.id = "lg-intro"; ov.setAttribute("aria-hidden", "true");
   const fondo = document.createElement("div"); fondo.className = "lg-fondo"; fondo.style.background = P.background;
-  const canvas = document.createElement("canvas");
   const tile = document.createElement("div"); tile.id = "lg-tile";
   const im = document.createElement("img"); im.alt = ""; im.src = LG_IMG; tile.appendChild(im);
-  ov.append(fondo, canvas, tile); document.body.appendChild(ov);
-  let r = null; try{ r = LG.createRenderer(canvas); }catch(_){ r = null; }
-  if(!r){ ov.remove(); return; }
+  ov.append(fondo, tile); document.body.appendChild(ov);
   lgActivo = true; caja.classList.add("lg-espera");
-  let terminado = false, raf = 0, moviendo = false;
-  const salvavidas = setTimeout(() => fin(false), 9000);
+  let terminado = false, raf = 0, moviendo = false, r = null;
+  const salvavidas = setTimeout(() => fin(false), 12000);
   const fin = abortar => {
     if(terminado) return; terminado = true; cancelAnimationFrame(raf); clearTimeout(salvavidas); lgFin = null;
-    try{ r.dispose(); }catch(_){}
+    try{ if(r) r.dispose(); }catch(_){}
     ov.remove(); lgActivo = false; caja.classList.remove("lg-espera");
     const f = lgCont; lgCont = null;
     if(!abortar && f) f();
@@ -4509,15 +4506,14 @@ function iniciarLogoIntro(){
   const W = ov.clientWidth || innerWidth, H = ov.clientHeight || innerHeight;
   const lado = Math.round(Math.min(P.tileSize, W * 0.78, H * 0.6));
   const reg = Math.round(lado * 1.9);   // el vidrio solo se dibuja alrededor del logo
-  const ladoT = Math.round(lado * LG.frameAt(P.present - LG.CORTE, P, 0).uPlateScale);   // tamaño con el que el vidrio queda al soltarse
-  canvas.width = canvas.height = Math.round(reg * dpr);
-  canvas.style.cssText = "left:" + (W - reg) / 2 + "px;top:" + (H - reg) / 2 + "px;width:" + reg + "px;height:" + reg + "px";
+  const ladoT = Math.round(lado * LG.frameAt(P.present, P, 0).uPlateScale);   // tamaño del vidrio justo antes de soltarse
   tile.style.width = tile.style.height = ladoT + "px";
   tile.style.left = (W - ladoT) / 2 + "px"; tile.style.top = (H - ladoT) / 2 + "px";
   const mover = () => {
     if(moviendo || terminado) return; moviendo = true;
     const lg = caja.querySelector(".acc-marca-movil .logo"); const rc = lg ? lg.getBoundingClientRect() : null;
-    canvas.style.visibility = "hidden"; tile.style.opacity = "1";
+    if(r) r.dispose(); r = null; if(canvasGL) canvasGL.style.visibility = "hidden";
+    tile.style.transition = "none"; tile.style.opacity = "1";
     if(!rc || !rc.width){ fin(false); return; }
     const dx = rc.left + rc.width / 2 - W / 2, dy = rc.top + rc.height / 2 - H / 2, k = rc.width / ladoT;
     fondo.animate([{opacity: 1}, {opacity: 0}], {duration: 700, delay: 80, easing: "ease-out", fill: "forwards"});
@@ -4525,22 +4521,40 @@ function iniciarLogoIntro(){
     a.finished.then(() => fin(false), () => fin(false));
   };
   ov.addEventListener("pointerdown", mover);
-  LG.logo().then(logo => {
+  let canvasGL = null;
+  /* Se prepara todo (vidrio, textura del logo) con el fondo ya pintado y la animación arranca recién cuando
+     está listo: así no entra cortada ni se queda pausada mientras la página termina de cargar. */
+  const preparar = () => {
     if(terminado) return;
-    r.setLogo(logo);
-    const t0 = performance.now(), tope = P.present - LG.CORTE, tCruce = tope - 0.25; let cruzando = false, ultimo = 0, lentos = 0;
-    const paso = ahora => {
-      if(terminado || moviendo) return;
-      const T = (ahora - t0) / 1000 * LG.SPEED;
-      r.render(LG.frameAt(Math.min(T, tope), P, 0), canvas.width, canvas.height, lado * dpr, canvas.width / 2, canvas.height / 2);
-      if(ultimo && ahora - ultimo > 90 && ++lentos >= 3 && !cruzando){ cruzando = true; tile.style.transition = "opacity .2s ease-out"; tile.style.opacity = "1"; setTimeout(mover, 220); }
-      ultimo = ahora;
-      if(T >= tCruce && !cruzando){ cruzando = true; tile.style.transition = "opacity .3s ease-out"; tile.style.opacity = "1"; setTimeout(mover, 420); }
+    canvasGL = document.createElement("canvas");
+    canvasGL.width = canvasGL.height = Math.round(reg * dpr);
+    canvasGL.style.cssText = "left:" + (W - reg) / 2 + "px;top:" + (H - reg) / 2 + "px;width:" + reg + "px;height:" + reg + "px";
+    try{ r = LG.createRenderer(canvasGL); }catch(_){ r = null; }
+    if(!r){ fin(false); return; }
+    LG.logo().then(logo => {
+      if(terminado) return;
+      r.setLogo(logo);
+      const px = canvasGL.width, c = px / 2, dibujar = T => r.render(LG.frameAt(T, P, 0), px, px, lado * dpr, c, c);
+      dibujar(0);                                   // primer dibujo: compila y sube las texturas
+      ov.insertBefore(canvasGL, tile);
+      const tx = P.present, tMover = tx + 0.7, tFin = tx + 0.95 - 0.02;
+      let T = 0, antes = 0, cruzando = false, lentos = 0;
+      const paso = ahora => {
+        if(terminado || moviendo) return;
+        const dt = antes ? (ahora - antes) / 1000 : 0; antes = ahora;
+        if(dt > 0.09 && ++lentos >= 3) T = Math.max(T, tMover);   // equipo lento: se salta directo al cierre
+        T += Math.min(dt, 0.05) * LG.SPEED;                   // un tirón no se come el comienzo de la animación
+        dibujar(Math.min(T, tFin));
+        if(T >= tx && !cruzando){ cruzando = true; tile.style.transition = "opacity .35s ease-out"; tile.style.opacity = "1"; }
+        if(T >= tMover){ mover(); return; }
+        raf = requestAnimationFrame(paso);
+      };
       raf = requestAnimationFrame(paso);
-    };
-    raf = requestAnimationFrame(paso);
-  }).catch(() => fin(false));
+    }).catch(() => fin(false));
+  };
+  requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(preparar, 0)));
 }
+
 let tIntro = null;
 function pintarBienvenida(intro){
   const h = document.getElementById("acc-bienv"); if(!h) return;
